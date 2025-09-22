@@ -1,8 +1,8 @@
-# KAISON
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 
 # Model components:
 from text_encoder  import Encoder as TextEncoder
@@ -16,7 +16,8 @@ from fusion_layer  import Fusion  as FusionLayer
 #    (will influence the impelementation of image_encoder)
 # 3. ...
 
-from config import D_TEXT, D_EMBEDDING, D_FUSION
+
+from config import D_TABULAR, D_EMBEDDING, D_FUSION
 
 
 class Head(nn.Module):
@@ -27,25 +28,52 @@ class Head(nn.Module):
     def forward(self, z): 
         return self.fc(z)
 
+
 class MultiHeadModel(nn.Module):
     def __init__(self, 
-                 d_text = D_TEXT, 
+                 d_tabular = D_TABULAR, 
                  d_embedding = D_EMBEDDING, 
-                 d_fusion = D_FUSION, 
-                 n_classes = None
+                 d_fusion = D_FUSION,
+                 n_tabular_classes = None,
+                 n_image_classes = None,
+                 n_multi_classes = None
                  ):
         
         super().__init__()
-        self.txt_enc = TextEncoder(d_text, d_embedding)
-        self.img_enc = ImageEncoder(d_embedding)
+        self.tabular_enc = TextEncoder(d_tabular, d_embedding)
+        self.image_enc   = ImageEncoder(d_embedding)
         self.fusion  = FusionLayer(d_fusion)
-        self.head = Head(d_fusion, n_classes) if n_classes else None
+        
+        # multi heads
+        self.head_tabular = Head(d_embedding, n_tabular_classes) if n_tabular_classes is not None else None
+        
+        self.head_image   = Head(d_embedding, n_image_classes)   if n_image_classes   is not None else None
+        self.head_multi   = Head(d_fusion,    n_multi_classes)   if n_multi_classes   is not None else None
 
-    def forward(self, *, x_text = None, x_img = None):
-        assert self.head is not None, "No head defined"
-        zt = self.txt_enc(x_text)
-        zi = self.img_enc(x_img)
+    def forward(self, *, x_text = None, x_img = None):        
+        zt = self.tabular_enc(x_text)
+        zi = self.image_enc(x_img)
         z  = self.fusion(zt, zi)
         return self.head(z)
+    
+    def forward(self, *, task_type, x_text = None, x_img = None):
+        if task_type == "tabular":
+            zt = self.tabular_enc(x_text)
+            z = self.head_tabular(zt)
+            return z
+        
+        elif task_type == "image":
+            zi = self.image_enc(x_img)
+            z = self.head_image(zi)
+            return z
+        
+        elif task_type == "multi":
+            zt = self.tabular_enc(x_text)
+            zi = self.image_enc(x_img)
+            z  = self.fusion(zt, zi)
+            return self.head_multi(z)
+        
+        else:
+            raise ValueError("task_type must be 'tabular' | 'image' | 'multi'")
 
 
