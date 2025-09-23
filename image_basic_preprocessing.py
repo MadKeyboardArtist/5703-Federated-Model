@@ -1,13 +1,11 @@
 import os
 import torch
 from torchvision import datasets, transforms
-from torch.utils.data import random_split, DataLoader
-import matplotlib.pyplot as plt
 
 IMG_SIZE  = 224 
-TRAIN_DIR = "image_dataset/retina_extracted/train"
-VAL_DIR   = "image_dataset/retina_extracted/val"
-TEST_DIR  = "image_dataset/retina_extracted/test"
+TRAIN_DIR = "image_dataset/split/train"
+VAL_DIR   = "image_dataset/split/val"
+TEST_DIR  = "image_dataset/split/test"
 
 # Preprocessing process
 tfms = transforms.Compose([
