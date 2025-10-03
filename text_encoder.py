@@ -5,12 +5,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class Encoder(nn.Module):
-    def __init__(self, d_in, d_feat):
+    def __init__(self, d_in, d_embedding):
         super().__init__()
-        self.net = nn.Sequential(nn.Linear(d_in, 256), nn.ReLU(),
-                                 nn.Linear(256, d_feat), nn.ReLU())
-        
-        self.d_feat = d_feat
+        self.net = nn.Sequential(
+            nn.Linear(d_in, 256), 
+            nn.ReLU(),
+            nn.Linear(256, d_embedding), 
+            nn.ReLU()
+            )
     
     def forward(self, x):  
         return self.net(x)

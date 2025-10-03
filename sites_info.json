@@ -1,0 +1,12 @@
+[
+    {
+        "name": "tabular_1",
+        "modality": "tabular",
+        "raw_dataset_path": "tabular_dataset/diabetes_012_ready_to_model.csv"
+    },
+    {
+        "name": "image_1",
+        "modality": "image",
+        "raw_dataset_path": "image_dataset/split"
+    }
+]
