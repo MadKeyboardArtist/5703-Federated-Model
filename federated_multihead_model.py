@@ -5,9 +5,9 @@ import torch.nn.functional as F
 
 
 # Model components:
-from text_encoder  import Encoder as TextEncoder
-from image_encoder import Encoder as ImageEncoder
-from fusion_layer  import Fusion  as FusionLayer
+from model_components.text_encoder  import Encoder as TextEncoder
+from model_components.image_encoder import Encoder as ImageEncoder
+from model_components.fusion_layer  import Fusion  as FusionLayer
 
 
 # other components:
