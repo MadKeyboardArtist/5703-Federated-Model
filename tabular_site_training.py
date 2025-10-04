@@ -128,9 +128,9 @@ def train_one_epoch(model, loader, opt):
     return run_loss, run_acc, total_samples
 
 # 5. operate training
-def training(global_state, csvpath, labelcol, n_classes, head_path):
+def training(global_state, csvpath, labelcol, n_classes, track_head_path, record_head_path):
     # 1. Build model
-    client_model = build_local_model(global_state, n_classes, head_path)
+    client_model = build_local_model(global_state, n_classes, track_head_path)
     
     model = client_model.to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr = LR, weight_decay = WD)
@@ -154,13 +154,9 @@ def training(global_state, csvpath, labelcol, n_classes, head_path):
     # d_text = next(iter(train_loader))["ehr"].shape[1]  # Table feature dimensions
 
     # 3. train
-    os.makedirs("runs/exp_final", exist_ok = True)
-    best_path="runs/exp_final/best.pth"
-
     best = -1.0
     sample_count = 0
-    best_global_state = global_state
-
+    best_head_state = None
 
     for epoch in range(1, EPOCHS+1):        
         tr_l,tr_a, tr_sp = train_one_epoch(model, train_loader, optimizer)
@@ -175,17 +171,15 @@ def training(global_state, csvpath, labelcol, n_classes, head_path):
         float_va_a = float(va_a)
         if float_va_a > best:
             best = float_va_a
-            # save HEAD ONLY, for privacy-preserving            
-            torch.save(model.head.state_dict(), head_path)
-            # record the global encoder for returning
-            best_global_state = model.enc.state_dict()
-            
-            # optional saving
-            torch.save({"epoch":epoch,"model":model.state_dict()}, best_path)
-            print(f" [best updated] {best:.4f} -> {best_path}")
+            # keep HEAD for outcome record (the best head if the best global occurs in this round)
+            # HEAD ONLY, for privacy-preserving            
+            # torch.save(model.head.state_dict(), record_head_path)
+            best_head_state = model.head.state_dict()
+            # print(f" [best updated] {best:.4f} -> {record_head_path}")
 
     # 4. Return only tabular encoder weights
     # 4.1 filter, only keeps tabular_encoder, drop image encoder and fusion
+
     # 4.2 To return paras in the form of:
     # "tabular_enc.net.0.weight"
     # "tabular_enc.net.0.bias"
@@ -193,11 +187,21 @@ def training(global_state, csvpath, labelcol, n_classes, head_path):
     # "net.0.weight"
     # "net.0.bias" when using: model.enc.tabular_enc.state_dict()
     # this is because the FedAng calculation in server need the prefix (like: "tabular_enc", "inage_enc", ...)
-    updated_state = {}
-    for key, value in best_global_state.items():
+
+    # 4.3 sent back the newest global encodeers, instead of the best
+    # Because FedAvg is about aggregating gradients/weight updates, not cherry-picking local checkpoints.
+    # If each site sent back different “best” encoders (picked at different epochs), 
+    # the updates would be inconsistent 
+    # and the optimization wouldn’t converge properly.
+
+    updated_state = {} # global state
+    for key, value in model.enc.state_dict().items():
         if key.startswith("tabular_enc"):
-            updated_state[key] = value    
+            updated_state[key] = value
+
+    # 4.4 record the newest heads for the next federated training round
+    # torch.save(model.head.state_dict(), record_head_path)
 
     # Return the filtered encoder state and the sample count
-    return updated_state, sample_count
+    return updated_state, sample_count, best_head_state
 
