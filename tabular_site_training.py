@@ -49,7 +49,7 @@ def build_local_model (global_state, n_classes, head_path):
     
     # 2.4 Load the saved local head weights
     if os.path.exists(head_path):
-        head_state = torch.load(head_path, map_location = "cpu")
+        head_state = torch.load(head_path, map_location = "cpu", weights_only=True)
         local_model.head.load_state_dict(head_state, strict = False)
     
     return local_model
@@ -127,15 +127,47 @@ def train_one_epoch(model, loader, opt):
 
     return run_loss, run_acc, total_samples
 
+# 4.1 simple training for 1 epoch
+def train_one_epoch_simple(model, loader, opt):
+    model.train()
+    total_samples = 0
+
+    for batch in enumerate(loader, 1):
+        for k,v in batch.items():
+            if isinstance(v, torch.Tensor): 
+                batch[k] = v.to(device)
+
+        opt.zero_grad(set_to_none=True)
+
+        logits = model(batch["ehr"])
+        loss   = F.cross_entropy(logits, batch["label"])
+        
+        loss.backward()
+        opt.step()
+
+        bs = batch["label"].size(0) # might change for the final batch
+        total_samples += bs
+
+    return total_samples
+
 # 5. operate training
-def training(global_state, csvpath, labelcol, n_classes, track_head_path, record_head_path):
+def training(global_state, train_set_path, val_set_path, labelcol, n_classes, newest_head_path):
     # 1. Build model
-    client_model = build_local_model(global_state, n_classes, track_head_path)
+    client_model = build_local_model(global_state, n_classes, newest_head_path)
     
     model = client_model.to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr = LR, weight_decay = WD)
 
     # 2. build dataloder and load dataset
+    # Build datasets directly from the .csv
+    train_ds = TabularOnlyDataset(train_set_path, labelcol)
+    val_ds   = TabularOnlyDataset(val_set_path,   labelcol)
+
+    # wrap with DataLoader
+    train_loader = DataLoader(train_ds, batch_size=BATCH, shuffle=True)
+    val_loader   = DataLoader(val_ds,   batch_size=BATCH, shuffle=False)
+
+    '''
     full = TabularOnlyDataset(csvpath, labelcol)
 
     N = len(full)
@@ -150,7 +182,7 @@ def training(global_state, csvpath, labelcol, n_classes, track_head_path, record
 
     train_loader = DataLoader(train_ds, batch_size=BATCH, shuffle=True )
     val_loader   = DataLoader(val_ds,   batch_size=BATCH, shuffle=False)
-
+    '''
     # d_text = next(iter(train_loader))["ehr"].shape[1]  # Table feature dimensions
 
     # 3. train
@@ -160,6 +192,7 @@ def training(global_state, csvpath, labelcol, n_classes, track_head_path, record
 
     for epoch in range(1, EPOCHS+1):        
         tr_l,tr_a, tr_sp = train_one_epoch(model, train_loader, optimizer)
+        # tr_sp = train_one_epoch_simple(model, train_loader, optimizer)
         va_l,va_a = evaluate(model, val_loader)
         '''
         print(f"\nEpoch {epoch}")
@@ -169,13 +202,22 @@ def training(global_state, csvpath, labelcol, n_classes, track_head_path, record
         sample_count += tr_sp
 
         float_va_a = float(va_a)
+        # acc based check point:
+        # save the model when it's more accurate on validation set (i.e., higher % of correct predictions).
+        # Common in classification tasks.
+        # Use when:
+        # 1. evaluation metric is classification accuracy
+        # 2. the goal is to maximize correct predictions, regardless of confidence
+        # 3. it is okay with a slightly higher loss as long as accuracy improves
         if float_va_a > best:
             best = float_va_a
             # keep HEAD for outcome record (the best head if the best global occurs in this round)
             # HEAD ONLY, for privacy-preserving            
             # torch.save(model.head.state_dict(), record_head_path)
             best_head_state = model.head.state_dict()
-            # print(f" [best updated] {best:.4f} -> {record_head_path}")
+            print(f" [best updated] acc: {best:.4f}")
+
+    print("finish tabular site training")
 
     # 4. Return only tabular encoder weights
     # 4.1 filter, only keeps tabular_encoder, drop image encoder and fusion
@@ -200,7 +242,7 @@ def training(global_state, csvpath, labelcol, n_classes, track_head_path, record
             updated_state[key] = value
 
     # 4.4 record the newest heads for the next federated training round
-    # torch.save(model.head.state_dict(), record_head_path)
+    torch.save(model.head.state_dict(), newest_head_path)
 
     # Return the filtered encoder state and the sample count
     return updated_state, sample_count, best_head_state
