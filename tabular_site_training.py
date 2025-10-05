@@ -78,11 +78,23 @@ class TabularOnlyDataset(Dataset):
 
 # 3. evaluation function (on validation)
 @torch.no_grad()
-def evaluate(model, loader):
+#def evaluation(model, loader):
+def evaluation(global_state, val_set_path, labelcol, n_classes, newest_head_path):
+    # 1. build the model
+    client_model = build_local_model(global_state, n_classes, newest_head_path)
+    model = client_model.to(device)
+
+    # 2. build dataloder and load dataset
+    # Build datasets directly from the .csv
+    val_ds = TabularOnlyDataset(val_set_path, labelcol)
+    # wrap with DataLoader
+    val_loader = DataLoader(val_ds, batch_size=BATCH, shuffle=False)
+
+    # 3. calculate acc
     model.eval()
     tot_l = tot_a = n = 0
 
-    for batch in loader:
+    for batch in val_loader:
         for k, v in batch.items():
             if isinstance(v, torch.Tensor): batch[k]=v.to(device)
 
@@ -94,7 +106,12 @@ def evaluate(model, loader):
         tot_a += acc
         n += 1
 
-    return tot_l/max(1,n), tot_a/max(1,n)
+    # results calculation
+    site_loss = float(tot_l/max(1,n))
+    site_acc = float(tot_a/max(1,n))
+    site_sample_num = n
+
+    return site_loss, site_acc, site_sample_num
 
 # 4. training for 1 epoch
 def train_one_epoch(model, loader, opt):
@@ -121,9 +138,9 @@ def train_one_epoch(model, loader, opt):
         run_a += acc * bs # weighted acc
         total_samples += bs
 
-        # calculate results
-        run_loss = run_l / max(1, i)
-        run_acc  = run_a / max(1, total_samples)
+    # calculate results
+    run_loss = run_l / max(1, i)
+    run_acc  = run_a / max(1, total_samples)
 
     return run_loss, run_acc, total_samples
 
@@ -193,7 +210,7 @@ def training(global_state, train_set_path, val_set_path, labelcol, n_classes, ne
     for epoch in range(1, EPOCHS+1):        
         tr_l,tr_a, tr_sp = train_one_epoch(model, train_loader, optimizer)
         # tr_sp = train_one_epoch_simple(model, train_loader, optimizer)
-        va_l,va_a = evaluate(model, val_loader)
+        va_l,va_a = evaluation(model, val_loader)
         '''
         print(f"\nEpoch {epoch}")
         print(f" -> train loss={tr_l:.4f} acc={tr_a:.4f}")
@@ -246,4 +263,54 @@ def training(global_state, train_set_path, val_set_path, labelcol, n_classes, ne
 
     # Return the filtered encoder state and the sample count
     return updated_state, sample_count, best_head_state
+
+# 6. final head training after federated learning (optimal ecoders gained)
+def final_head_training(global_state, train_set_path, val_set_path, labelcol, n_classes, newest_head_path):
+    # re-train the local heads after the fedavg global encoders gained
+    # intialize the head, to replace the saved newest (can be done in caller)
+    # save the best in the newest
+    # and also return it to caller (for caller to decide whether to replace the current best with this new one)
+    # (might not be necessary, since it could be accessed from the saving file)
+
+    # 1. Build model
+    client_model = build_local_model(global_state, n_classes, newest_head_path)
+    model = client_model.to(device)
+
+    # 2. Freeze the encoder (shared global part)
+    for param in model.enc.parameters():
+        param.requires_grad = False
+    # 3. Set optimizer to only optimize the local head
+    optimizer = torch.optim.AdamW(model.head.parameters(), lr=LR, weight_decay=WD)
+
+    # 4. build dataloder and load dataset
+    # Build datasets directly from the .csv
+    train_ds = TabularOnlyDataset(train_set_path, labelcol)
+    val_ds   = TabularOnlyDataset(val_set_path,   labelcol)
+
+    # wrap with DataLoader
+    train_loader = DataLoader(train_ds, batch_size=BATCH, shuffle=True)
+    val_loader   = DataLoader(val_ds,   batch_size=BATCH, shuffle=False)
+
+    # 5. train
+    best = -1.0
+    best_head_state = None
+    best_model_state = None
+
+    for epoch in range(1, EPOCHS + 1):        
+        train_one_epoch_simple(model, train_loader, optimizer)
+        va_l, va_a = evaluation(model, val_loader)
+        float_va_a = float(va_a)
+        if float_va_a > best:
+            best = float_va_a
+            best_head_state = model.head.state_dict()
+            # whole model saving: optinal and might against pravicy protection
+            best_model_state = model.state_dict()
+            print(f" [best tabular head updated] acc: {best:.4f}")
+    print("finish final tabular head training")
+
+    # 4.4 record the newest heads for the next federated training round
+    torch.save(best_head_state, newest_head_path)
+    # whole model saving: optinal and might against pravicy protection
+    torch.save(best_model_state, newest_head_path)
+    return best_head_state
 
