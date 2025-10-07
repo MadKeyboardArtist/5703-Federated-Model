@@ -8,29 +8,29 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, transforms
 
-# =========================
-# 通用实验配置（一次性在这里改）
-# =========================
+
+#General experimental setup
+
 NUM_CLIENTS = 3
-ALPHA = 0.5          # Dirichlet non-IID 程度（越小越不均匀）
+ALPHA = 0.5          # Dirichlet non-IID 
 ROUNDS = 5
 LOCAL_EPOCHS = 1
 LR = 1e-3
 BATCH = 32
 VAL_BATCH = 64
-USE_DUMMY_TABULAR = True   # 目前只走 image 分支（表格用全零占位）
+USE_DUMMY_TABULAR = True   # image branch
 
-# FedProx / FedAdam 的默认超参（可按需微调）
+
 FEDPROX_MU = 0.001
 FADAM_ETA = 0.1
 FADAM_BETA1, FADAM_BETA2 = 0.9, 0.99
 FADAM_EPS = 1e-8
 
-# 数据路径
+# path
 TRAIN_DIR = "image_dataset/split/train"
 VAL_DIR   = "image_dataset/split/val"
 
-# 视觉预处理
+#Visual Preprocessing
 IMAGENET_MEAN=[0.485,0.456,0.406]; IMAGENET_STD=[0.229,0.224,0.225]
 IMG_SIZE = 224
 img_tfms = transforms.Compose([
@@ -42,9 +42,9 @@ img_tfms = transforms.Compose([
     transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),
 ])
 
-# =========================
-# 工具
-# =========================
+
+# tool
+
 def seed_everything(seed=42):
     random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
     if torch.cuda.is_available():
@@ -58,9 +58,9 @@ def dirichlet_split(indices, num_clients=5, alpha=1.0):
     parts = np.split(indices, cuts)
     return [p.tolist() for p in parts]
 
-# =========================
-# 数据包装
-# =========================
+
+# data Packaging
+
 class MMImageTabular(Dataset):
     """ImageFolder +（可选）表格向量；本实验仅用 image。"""
     def __init__(self, image_folder: datasets.ImageFolder, indices, tab_lookup=None, dummy_dim: int = 21):
@@ -80,14 +80,14 @@ class MMImageTabular(Dataset):
             xt = torch.zeros(self.dummy_dim, dtype=torch.float32)
         return img, xt, y
 
-# =========================
-# 构建：模型 / 客户端 / 验证集
-# =========================
+
+
+
 def build_model_fn(n_classes: int):
-    # 只做图像分类 → 需要 n_image_classes
+    #  n_image_classes
     model = MultiHeadModel(n_image_classes=n_classes)
 
-    # 冻结全部，再开启 head_image（也可把 image_enc 解冻做对比）
+    # Freeze all, then enable head_image (you may also unfreeze image_enc for comparison).
     for p in model.parameters(): p.requires_grad = False
     if hasattr(model, "head_image") and isinstance(model.head_image, torch.nn.Module):
         for p in model.head_image.parameters(): p.requires_grad = True
@@ -120,9 +120,9 @@ def build_val_loader_fn(batch_size=64):
     dl = DataLoader(ds, batch_size=batch_size, shuffle=False, num_workers=0, pin_memory=False)
     return dl, len(img_val.classes)
 
-# =========================
-# 训练、评估与聚合
-# =========================
+
+# Training, Evaluation, and Aggregation
+
 def local_train(model, loader, device, epochs=1, lr=1e-3, strategy="fedavg", global_state=None, mu=0.0):
     model = model.to(device)
     model.train()
@@ -204,9 +204,9 @@ def server_opt_step_fedadam(global_model, agg_state, opt_state, eta=0.1, beta1=0
     global_model.load_state_dict(new_state)
     return opt_state
 
-# =========================
-# 单次实验（可被循环调用）
-# =========================
+
+# single experiment
+
 def run_experiment(strategy: str,
                    num_clients=NUM_CLIENTS,
                    alpha=ALPHA,
@@ -241,7 +241,7 @@ def run_experiment(strategy: str,
     with open(metrics_path, "a") as f:
         f.write(json.dumps({"round": 0, **init_metric}) + "\n")
 
-    server_state = {}  # FedAdam 的服务器动量状态
+    server_state = {}  # FedAdam
 
     for r in range(1, rounds + 1):
         t0 = time.time()
@@ -283,13 +283,13 @@ def run_experiment(strategy: str,
     print(f"💾 Saved to runs/{strategy}_final.pth")
     print(f"📈 Metrics log -> {metrics_path}")
 
-# =========================
-# 主程序：一次性跑完三种策略
-# =========================
+
+# main program
+
 if __name__ == "__main__":
     print("🚀 Start federated aggregation benchmark (FedAvg / FedProx / FedAdam)")
 
-    # 你可以改这里的顺序或子集
+    
     strategies = ["fedavg", "fedprox", "fedadam"]
 
     for st in strategies:
