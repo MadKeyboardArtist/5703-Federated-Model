@@ -77,19 +77,11 @@ class TabularOnlyDataset(Dataset):
         return {"ehr": ehr, "label": label}
 
 # 3. evaluation function (on validation)
-@torch.no_grad()
-#def evaluation(model, loader):
-def evaluation(global_state, val_set_path, labelcol, n_classes, newest_head_path):
+def evaluation_in_training (model, val_loader):
     # 1. build the model
-    client_model = build_local_model(global_state, n_classes, newest_head_path)
-    model = client_model.to(device)
-
+    pass
     # 2. build dataloder and load dataset
-    # Build datasets directly from the .csv
-    val_ds = TabularOnlyDataset(val_set_path, labelcol)
-    # wrap with DataLoader
-    val_loader = DataLoader(val_ds, batch_size=BATCH, shuffle=False)
-
+    pass
     # 3. calculate acc
     model.eval()
     tot_l = tot_a = n = 0
@@ -108,7 +100,7 @@ def evaluation(global_state, val_set_path, labelcol, n_classes, newest_head_path
 
     # results calculation
     site_loss = float(tot_l/max(1,n))
-    site_acc = float(tot_a/max(1,n))
+    site_acc  = float(tot_a/max(1,n))
     site_sample_num = n
 
     return site_loss, site_acc, site_sample_num
@@ -149,7 +141,7 @@ def train_one_epoch_simple(model, loader, opt):
     model.train()
     total_samples = 0
 
-    for batch in enumerate(loader, 1):
+    for _, batch in enumerate(loader, 1):
         for k,v in batch.items():
             if isinstance(v, torch.Tensor): 
                 batch[k] = v.to(device)
@@ -168,14 +160,30 @@ def train_one_epoch_simple(model, loader, opt):
     return total_samples
 
 # 5. operate training
-def training(global_state, train_set_path, val_set_path, labelcol, n_classes, newest_head_path):
+def training(global_state, 
+             freeze_global,
+             train_set_path, 
+             val_set_path, 
+             labelcol, 
+             n_classes, 
+             newest_head_path, 
+             current_best_head_path):
     # 1. Build model
     client_model = build_local_model(global_state, n_classes, newest_head_path)
     
     model = client_model.to(device)
-    optimizer = torch.optim.AdamW(model.parameters(), lr = LR, weight_decay = WD)
+    
+    # 2. freeze_global or not
+    if freeze_global == True:
+        # 2. Freeze the encoder (shared global part)
+        for param in model.enc.parameters():
+            param.requires_grad = False
+        # 3. Set optimizer to only optimize the local head
+        optimizer = torch.optim.AdamW(model.head.parameters(), lr=LR, weight_decay=WD)
+    else:
+        optimizer = torch.optim.AdamW(model.parameters(), lr = LR, weight_decay = WD)
 
-    # 2. build dataloder and load dataset
+    # 3. build dataloder and load dataset
     # Build datasets directly from the .csv
     train_ds = TabularOnlyDataset(train_set_path, labelcol)
     val_ds   = TabularOnlyDataset(val_set_path,   labelcol)
@@ -184,33 +192,15 @@ def training(global_state, train_set_path, val_set_path, labelcol, n_classes, ne
     train_loader = DataLoader(train_ds, batch_size=BATCH, shuffle=True)
     val_loader   = DataLoader(val_ds,   batch_size=BATCH, shuffle=False)
 
-    '''
-    full = TabularOnlyDataset(csvpath, labelcol)
-
-    N = len(full)
-    idx = np.arange(N)
-    np.random.shuffle(idx)
-
-    cut = int(N*(1.0-VAL_RATIO))
-    tr_idx, va_idx = idx[:cut], idx[cut:]
-
-    train_ds = torch.utils.data.Subset(full, tr_idx)
-    val_ds   = torch.utils.data.Subset(full, va_idx)
-
-    train_loader = DataLoader(train_ds, batch_size=BATCH, shuffle=True )
-    val_loader   = DataLoader(val_ds,   batch_size=BATCH, shuffle=False)
-    '''
-    # d_text = next(iter(train_loader))["ehr"].shape[1]  # Table feature dimensions
-
-    # 3. train
+    # 4. train
     best = -1.0
     sample_count = 0
     best_head_state = None
 
-    for epoch in range(1, EPOCHS+1):        
-        tr_l,tr_a, tr_sp = train_one_epoch(model, train_loader, optimizer)
-        # tr_sp = train_one_epoch_simple(model, train_loader, optimizer)
-        va_l,va_a = evaluation(model, val_loader)
+    for epoch in range(1, EPOCHS + 1):        
+        #tr_l,tr_a, tr_sp = train_one_epoch_simple(model, train_loader, optimizer)
+        tr_sp = train_one_epoch_simple(model, train_loader, optimizer)
+        va_l, va_a, va_sp = evaluation_in_training(model, val_loader)
         '''
         print(f"\nEpoch {epoch}")
         print(f" -> train loss={tr_l:.4f} acc={tr_a:.4f}")
@@ -228,89 +218,32 @@ def training(global_state, train_set_path, val_set_path, labelcol, n_classes, ne
         # 3. it is okay with a slightly higher loss as long as accuracy improves
         if float_va_a > best:
             best = float_va_a
-            # keep HEAD for outcome record (the best head if the best global occurs in this round)
+            # 1. keep this HEAD for outcome record
             # HEAD ONLY, for privacy-preserving            
-            # torch.save(model.head.state_dict(), record_head_path)
             best_head_state = model.head.state_dict()
+            # safe to save. (will be replaced if applying re-training)
+            torch.save(best_head_state, current_best_head_path)
+            
+            # 2. record the best ckpt results (epoch - level)
+            ckpt_eva_results = {
+                       "val_loss": va_l,
+                       "val_acc" : va_a,
+                       "num_samples": va_sp
+                       }
             print(f" [best updated] acc: {best:.4f}")
 
-    print("finish tabular site training")
+    print("tabular site training DONE")
 
-    # 4. Return only tabular encoder weights
-    # 4.1 filter, only keeps tabular_encoder, drop image encoder and fusion
-
-    # 4.2 To return paras in the form of:
-    # "tabular_enc.net.0.weight"
-    # "tabular_enc.net.0.bias"
-    # instead of:
-    # "net.0.weight"
-    # "net.0.bias" when using: model.enc.tabular_enc.state_dict()
-    # this is because the FedAng calculation in server need the prefix (like: "tabular_enc", "inage_enc", ...)
-
-    # 4.3 sent back the newest global encodeers, instead of the best
+    # 5. Return only tabular encoder weights
+    # sent back the newest global encodeers, instead of the best
     # Because FedAvg is about aggregating gradients/weight updates, not cherry-picking local checkpoints.
     # If each site sent back different “best” encoders (picked at different epochs), 
     # the updates would be inconsistent 
     # and the optimization wouldn’t converge properly.
+    updated_state = model.enc.state_dict() # the final global state
 
-    updated_state = {} # global state
-    for key, value in model.enc.state_dict().items():
-        if key.startswith("tabular_enc"):
-            updated_state[key] = value
+    # 6. record the newest local heads for the next federated training round
+    torch.save(model.head.state_dict(), newest_head_path) # the final local state
 
-    # 4.4 record the newest heads for the next federated training round
-    torch.save(model.head.state_dict(), newest_head_path)
-
-    # Return the filtered encoder state and the sample count
-    return updated_state, sample_count, best_head_state
-
-# 6. final head training after federated learning (optimal ecoders gained)
-def final_head_training(global_state, train_set_path, val_set_path, labelcol, n_classes, newest_head_path):
-    # re-train the local heads after the fedavg global encoders gained
-    # intialize the head, to replace the saved newest (can be done in caller)
-    # save the best in the newest
-    # and also return it to caller (for caller to decide whether to replace the current best with this new one)
-    # (might not be necessary, since it could be accessed from the saving file)
-
-    # 1. Build model
-    client_model = build_local_model(global_state, n_classes, newest_head_path)
-    model = client_model.to(device)
-
-    # 2. Freeze the encoder (shared global part)
-    for param in model.enc.parameters():
-        param.requires_grad = False
-    # 3. Set optimizer to only optimize the local head
-    optimizer = torch.optim.AdamW(model.head.parameters(), lr=LR, weight_decay=WD)
-
-    # 4. build dataloder and load dataset
-    # Build datasets directly from the .csv
-    train_ds = TabularOnlyDataset(train_set_path, labelcol)
-    val_ds   = TabularOnlyDataset(val_set_path,   labelcol)
-
-    # wrap with DataLoader
-    train_loader = DataLoader(train_ds, batch_size=BATCH, shuffle=True)
-    val_loader   = DataLoader(val_ds,   batch_size=BATCH, shuffle=False)
-
-    # 5. train
-    best = -1.0
-    best_head_state = None
-    best_model_state = None
-
-    for epoch in range(1, EPOCHS + 1):        
-        train_one_epoch_simple(model, train_loader, optimizer)
-        va_l, va_a = evaluation(model, val_loader)
-        float_va_a = float(va_a)
-        if float_va_a > best:
-            best = float_va_a
-            best_head_state = model.head.state_dict()
-            # whole model saving: optinal and might against pravicy protection
-            best_model_state = model.state_dict()
-            print(f" [best tabular head updated] acc: {best:.4f}")
-    print("finish final tabular head training")
-
-    # 4.4 record the newest heads for the next federated training round
-    torch.save(best_head_state, newest_head_path)
-    # whole model saving: optinal and might against pravicy protection
-    torch.save(best_model_state, newest_head_path)
-    return best_head_state
-
+    # 7. Return the encoder state, sample count, and best ckpt
+    return updated_state, sample_count, ckpt_eva_results
