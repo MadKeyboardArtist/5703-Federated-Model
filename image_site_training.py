@@ -185,7 +185,7 @@ def training(site_name,
                                              workers=4)
     
     # 4. train each epoch
-    sample_count = 0
+    sp_count = 0
     min_loss = float("inf")
 
     for epoch in range(1, EPOCHS + 1):
@@ -197,7 +197,7 @@ def training(site_name,
         print(f"train: loss={t_loss:.4f}, acc={t_acc:.4f} | "
               f"val: loss={v_loss:.4f}, acc={v_acc:.4f}")
         '''
-        sample_count += total
+        sp_count += total
         
         # loss based check point:
         # save the model when it's more confident and better calibrated (i.e., lower cross-entropy or MSE).
@@ -240,4 +240,4 @@ def training(site_name,
     torch.save(model.head.state_dict(), newest_head_path)
 
     # Return the filtered encoder state and the sample count
-    return updated_state, sample_count, ckpt_eva_results
+    return updated_state, sp_count, ckpt_eva_results
