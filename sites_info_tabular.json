@@ -2,6 +2,10 @@
     {
         "name": "tabular_1",
         "modality": "tabular",
-        "raw_dataset_path": "tabular_dataset/diabetes_012_ready_to_model.csv"
+        "label_col": "Diabetes_012",
+        "n_classes": 2,
+        "clean_dataset_train": "tabular_dataset/tabular_1/diabetes_012_train.csv",
+        "clean_dataset_val": "tabular_dataset/tabular_1/diabetes_012_val.csv",
+        "clean_dataset_test": "tabular_dataset/tabular_1/diabetes_012_test.csv"
     }
 ]
