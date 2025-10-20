@@ -15,7 +15,7 @@ from torchvision import datasets, transforms
 from federated_multihead_model import SharedEncoders, ImageClientModel
 from config import D_TABULAR, D_EMBEDDING, D_FUSION # model configs
 from config import VAL_RATIO, EPOCHS, BATCH, LR, WD # training configs
-from image_basic_preprocessing import tfms
+# from image_basic_preprocessing import tfms
 
 # 0. Configs
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -155,6 +155,7 @@ def training(site_name,
              freeze_global,
              train_set_path, 
              val_set_path, 
+             tsfm,
              n_classes, 
              newest_head_path, 
              current_best_head_path
@@ -179,7 +180,7 @@ def training(site_name,
     # 3. build dataloder and load dataset
     train_loader, val_loader = build_loaders(train_set_path, 
                                              val_set_path, 
-                                             tfms, 
+                                             tsfm, 
                                              batch_size = BATCH, 
                                              workers=4)
     

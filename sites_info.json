@@ -11,7 +11,6 @@
     {
         "name": "image_1",
         "modality": "image",
-        "raw_dataset_path": "image_dataset/split",
         "n_classes": 5,
         "clean_dataset_train": "imager_dataset/image_1/train",
         "clean_dataset_val": "imager_dataset/image_1/val",
