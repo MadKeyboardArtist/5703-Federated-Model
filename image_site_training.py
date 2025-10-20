@@ -160,6 +160,9 @@ def training(site_name,
              newest_head_path, 
              current_best_head_path
              ):
+    # 0.
+    print("{:s}: image site training START".format(site_name))
+
     # 1. Build model
     client_model = build_local_model(global_state, n_classes, newest_head_path)    
     model = client_model.to(device)

@@ -169,6 +169,9 @@ def training(site_name,
              n_classes, 
              newest_head_path, 
              current_best_head_path):
+    # 0.
+    print("{:s}: tabular site training START".format(site_name))
+
     # 1. Build model
     client_model = build_local_model(global_state, n_classes, newest_head_path)
     
@@ -247,4 +250,99 @@ def training(site_name,
     torch.save(model.head.state_dict(), newest_head_path) # the final local state
 
     # 7. Return the encoder state, sample count, and best ckpt
+    return updated_state, sample_count, ckpt_eva_results
+
+
+def training_fed_prox(
+        site_name,
+        global_state,           
+        freeze_global,
+        train_set_path, 
+        val_set_path, 
+        labelcol, 
+        n_classes, 
+        newest_head_path, 
+        current_best_head_path,
+        fed_prox_agg = False,
+        mu = 0.05
+        ):
+    
+    # 0.
+    print(f"{site_name}: tabular site training START (FedProx μ={mu})")
+
+    # 1. Build model
+    client_model = build_local_model(global_state, n_classes, newest_head_path)
+    model = client_model.to(device)
+
+    # 2. freeze_global or not
+    if freeze_global:
+        for p in model.enc.parameters():
+            p.requires_grad = False
+        optimizer = torch.optim.AdamW(model.head.parameters(), lr=LR, weight_decay=WD)
+    else:
+        optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=WD)
+
+    # 3. Data
+    train_ds = TabularOnlyDataset(train_set_path, labelcol)
+    val_ds   = TabularOnlyDataset(val_set_path, labelcol)
+    train_loader = DataLoader(train_ds, batch_size=BATCH, shuffle=True)
+    val_loader   = DataLoader(val_ds, batch_size=BATCH, shuffle=False)
+
+    # 4. Prepare FedProx anchor
+    prox_anchor = {k: v.detach().clone().to(device) for k, v in global_state.items()}
+
+    best = -1.0
+    sample_count = 0
+    best_head_state = None
+
+    for epoch in range(1, EPOCHS + 1):
+        model.train()
+        total_samples = 0
+
+        for batch in train_loader:
+            for k, v in batch.items():
+                if torch.is_tensor(v):
+                    batch[k] = v.to(device)
+
+            optimizer.zero_grad(set_to_none=True)
+            logits = model(batch["ehr"])
+            loss = F.cross_entropy(logits, batch["label"])
+
+            # ===== FedProx proximal term =====
+            if fed_prox_agg:
+                prox_loss = torch.zeros(1, device=device)
+                for name, param in model.named_parameters():
+                    if not param.requires_grad: 
+                        continue
+                    # optional: skip head parameters (usually "head" in name)
+                    if "head" in name.lower():
+                        continue
+                    if name in prox_anchor:
+                        diff = param - prox_anchor[name]
+                        prox_loss += (diff * diff).sum()
+                loss = loss + (mu / 2.0) * prox_loss
+            # =================================
+
+            loss.backward()
+            optimizer.step()
+
+            total_samples += batch["label"].size(0)
+
+        # Validation
+        va_l, va_a, va_sp = evaluation_in_training(model, val_loader)
+        sample_count += total_samples
+
+        if float(va_a) > best:
+            best = float(va_a)
+            best_head_state = model.head.state_dict()
+            torch.save(best_head_state, current_best_head_path)
+            ckpt_eva_results = {"val_loss": va_l, "val_acc": va_a, "num_samples": va_sp}
+            print(f" [best updated] acc: {best:.4f}")
+
+    print(f"{site_name}: tabular site training DONE (FedProx)")
+
+    # 5. Return updated encoder
+    updated_state = model.enc.state_dict()
+    torch.save(model.head.state_dict(), newest_head_path)
+
     return updated_state, sample_count, ckpt_eva_results
