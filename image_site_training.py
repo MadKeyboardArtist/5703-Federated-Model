@@ -150,7 +150,8 @@ def evaluation_in_training(model, loader, device):
 
 
 # 5. operate training
-def training(global_state, 
+def training(site_name,
+             global_state, 
              freeze_global,
              train_set_path, 
              val_set_path, 
@@ -227,7 +228,7 @@ def training(global_state,
                        "num_samples": v_sp
                        }
             print(f" [best updated] loss: {min_loss:.4f}")    
-    print("image site training DONE")
+    print("{:s}: image site training DONE".format(site_name))
 
     # 4. Return only image encoder weights
     updated_state = model.enc.state_dict()

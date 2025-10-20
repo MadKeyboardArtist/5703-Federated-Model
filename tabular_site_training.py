@@ -160,7 +160,8 @@ def train_one_epoch_simple(model, loader, opt):
     return total_samples
 
 # 5. operate training
-def training(global_state, 
+def training(site_name,
+             global_state, 
              freeze_global,
              train_set_path, 
              val_set_path, 
@@ -232,7 +233,7 @@ def training(global_state,
                        }
             print(f" [best updated] acc: {best:.4f}")
 
-    print("tabular site training DONE")
+    print("{:s}: tabular site training DONE".format(site_name))
 
     # 5. Return only tabular encoder weights
     # sent back the newest global encodeers, instead of the best
