@@ -45,8 +45,7 @@ class MultiHeadModel(nn.Module):
         self.fusion  = FusionLayer(d_fusion)
         
         # multi heads
-        self.head_tabular = Head(d_embedding, n_tabular_classes) if n_tabular_classes is not None else None
-        
+        self.head_tabular = Head(d_embedding, n_tabular_classes) if n_tabular_classes is not None else None        
         self.head_image   = Head(d_embedding, n_image_classes)   if n_image_classes   is not None else None
         self.head_multi   = Head(d_fusion,    n_multi_classes)   if n_multi_classes   is not None else None
 
