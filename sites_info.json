@@ -12,8 +12,8 @@
         "name": "image_1",
         "modality": "image",
         "n_classes": 5,
-        "clean_dataset_train": "imager_dataset/image_1/train",
-        "clean_dataset_val": "imager_dataset/image_1/val",
-        "clean_dataset_test": "imager_dataset/image_1/test"
+        "clean_dataset_train": "image_dataset/image_1/train",
+        "clean_dataset_val": "image_dataset/image_1/val",
+        "clean_dataset_test": "image_dataset/image_1/test"
     }
 ]
