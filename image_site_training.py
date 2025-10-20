@@ -237,10 +237,10 @@ def training(site_name,
     print("{:s}: image site training DONE".format(site_name))
 
     # 4. Return only image encoder weights
-    updated_state = model.enc.state_dict()
+    updated_image = model.enc.image_enc.state_dict()
 
     # record the newest head for the next federated training round
     torch.save(model.head.state_dict(), newest_head_path)
 
     # Return the filtered encoder state and the sample count
-    return updated_state, sp_count, ckpt_eva_results
+    return updated_image, sp_count, ckpt_eva_results

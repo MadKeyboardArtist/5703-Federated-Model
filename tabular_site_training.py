@@ -244,13 +244,13 @@ def training(site_name,
     # If each site sent back different “best” encoders (picked at different epochs), 
     # the updates would be inconsistent 
     # and the optimization wouldn’t converge properly.
-    updated_state = model.enc.state_dict() # the final global state
+    updated_tabular = model.enc.tabular_enc.state_dict() # the final global state
 
     # 6. record the newest local heads for the next federated training round
     torch.save(model.head.state_dict(), newest_head_path) # the final local state
 
     # 7. Return the encoder state, sample count, and best ckpt
-    return updated_state, sample_count, ckpt_eva_results
+    return updated_tabular, sample_count, ckpt_eva_results
 
 
 def training_fed_prox(
