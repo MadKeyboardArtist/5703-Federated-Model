@@ -194,7 +194,7 @@ def training(site_name,
     val_loader   = DataLoader(val_ds,   batch_size=BATCH, shuffle=False)
 
     # 4. train
-    best = -1.0
+    best = -1.0 # best acc
     sample_count = 0
     best_head_state = None
 

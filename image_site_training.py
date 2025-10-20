@@ -185,7 +185,9 @@ def training(site_name,
                                              workers=4)
     
     # 4. train each epoch
+    sample_count = 0
     min_loss = float("inf")
+
     for epoch in range(1, EPOCHS + 1):
         # t_loss, t_acc, total = train_one_epoch(model, train_loader, optimizer, device, log_every=50)
         total = train_one_epoch_simple(model, train_loader, optimizer)
