@@ -5,8 +5,14 @@ import torch.nn.functional as F
 
 
 # Model components:
-from model_components.text_encoder  import Encoder as TextEncoder
+# MLP
+# from model_components.text_encoder  import Encoder as TextEncoder
+from model_components.MLP_Wayne import MLPEncoder as TextEncoder
+
+# CNN
 from model_components.image_encoder import Encoder as ImageEncoder
+
+# Fusion
 from model_components.fusion_layer  import Fusion  as FusionLayer
 
 
