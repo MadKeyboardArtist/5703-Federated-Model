@@ -12,10 +12,13 @@ from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import datasets, transforms
 
 # self-built files
-from federated_multihead_model import SharedEncoders, ImageClientModel
-from config import D_TABULAR, D_EMBEDDING, D_FUSION # model configs
-from config import VAL_RATIO, EPOCHS, BATCH, LR, WD # training configs
-# from image_basic_preprocessing import tfms
+# model configs
+from FederatedModel.federated_multihead_model import SharedEncoders, ImageClientModel
+from FederatedModel.model_config import D_TABULAR, D_EMBEDDING, D_FUSION 
+
+# training configs
+from training_config import VAL_RATIO, EPOCHS, BATCH, LR, WD 
+
 
 # 0. Configs
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -223,6 +226,8 @@ def training(site_name,
         # | Model C       | 0.92     | 0.46 | saved    ; Only `acc`      |
 
         float_v_loss = float(v_loss)
+        float_v_acc  = float(v_acc)
+
         if float_v_loss < min_loss - 1e-6:
             min_loss = float_v_loss
             # 1. record the current best local head 
@@ -233,7 +238,8 @@ def training(site_name,
                        "val_acc" : v_acc,
                        "num_samples": v_sp
                        }
-            print(f" [best updated] loss: {min_loss:.4f}")    
+            # print(f" [best updated] loss: {min_loss:.4f}")
+            print(f" [best updated] acc: {float_v_acc:.4f}")    
     print("{:s}: image site training DONE".format(site_name))
 
     # 4. Return only image encoder weights

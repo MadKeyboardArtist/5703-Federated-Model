@@ -8,9 +8,12 @@ import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset, DataLoader
 
-from federated_multihead_model import SharedEncoders, TabularClientModel
-from config import D_TABULAR, D_EMBEDDING, D_FUSION # model configs
-from config import VAL_RATIO, EPOCHS, BATCH, LR, WD # training configs
+# model configs
+from FederatedModel.federated_multihead_model import SharedEncoders, TabularClientModel
+from FederatedModel.model_config import D_TABULAR, D_EMBEDDING, D_FUSION 
+
+# training configs
+from training_config import VAL_RATIO, EPOCHS, BATCH, LR, WD 
 
 # 0. Configs
 LOG_EVERY = 50

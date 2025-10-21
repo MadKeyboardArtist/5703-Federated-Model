@@ -26,6 +26,9 @@ def _selective_fedavg(client_states: List[StateDict], client_weights: List[float
         out[k] = acc
     return out
 
+
+
+
 def aggregate_fedavg(global_model: torch.nn.Module, client_states: List[StateDict],
                      client_weights: List[float], server_state: Dict[str, Any] | None = None, **_) -> Tuple[StateDict, Dict[str, Any]]:
     try:
@@ -39,8 +42,17 @@ def aggregate_fedavg(global_model: torch.nn.Module, client_states: List[StateDic
     except Exception:
         return _selective_fedavg(client_states, client_weights), (server_state or {})
 
+
+
+
+
 def aggregate_fedprox(global_model, client_states, client_weights, server_state=None, **_):
     return aggregate_fedavg(global_model, client_states, client_weights, server_state)
+
+
+
+
+
 
 def aggregate_fedadam(global_model, client_states, client_weights, server_state=None,
                       eta=0.1, beta1=0.9, beta2=0.99, eps=1e-8, **_) -> Tuple[StateDict, Dict[str, Any]]:
@@ -60,5 +72,7 @@ def aggregate_fedadam(global_model, client_states, client_weights, server_state=
         new_state[k] = cur[k] + eta * m_hat / (torch.sqrt(v_hat) + eps)
     server_state["t"] = t
     return new_state, server_state
+
+
 
 AGG_FNS = {"fedavg": aggregate_fedavg, "fedprox": aggregate_fedprox, "fedadam": aggregate_fedadam}

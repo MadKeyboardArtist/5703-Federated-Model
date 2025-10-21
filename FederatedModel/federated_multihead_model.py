@@ -23,7 +23,7 @@ from model_components.fusion_layer  import Fusion  as FusionLayer
 # 3. ...
 
 
-from config import D_TABULAR, D_EMBEDDING, D_FUSION
+from model_config import D_TABULAR, D_EMBEDDING, D_FUSION
 
 
 class Head(nn.Module):
