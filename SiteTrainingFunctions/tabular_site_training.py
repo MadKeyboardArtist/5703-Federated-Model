@@ -13,7 +13,7 @@ from FederatedModel.federated_multihead_model import SharedEncoders, TabularClie
 from FederatedModel.model_config import D_TABULAR, D_EMBEDDING, D_FUSION 
 
 # training configs
-from training_config import VAL_RATIO, EPOCHS, BATCH, LR, WD 
+from SiteTrainingFunctions.training_config import VAL_RATIO, EPOCHS, BATCH, LR, WD 
 
 # 0. Configs
 LOG_EVERY = 50

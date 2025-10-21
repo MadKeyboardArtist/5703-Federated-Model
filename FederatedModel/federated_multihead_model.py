@@ -7,13 +7,13 @@ import torch.nn.functional as F
 # Model components:
 # MLP
 # from model_components.text_encoder  import Encoder as TextEncoder
-from model_components.MLP_Wayne import MLPEncoder as TextEncoder
+from FederatedModel.model_components.MLP_Wayne import MLPEncoder as TextEncoder
 
 # CNN
-from model_components.image_encoder import Encoder as ImageEncoder
+from FederatedModel.model_components.image_encoder import Encoder as ImageEncoder
 
 # Fusion
-from model_components.fusion_layer  import Fusion  as FusionLayer
+from FederatedModel.model_components.fusion_layer  import Fusion  as FusionLayer
 
 
 # other components:
@@ -23,7 +23,7 @@ from model_components.fusion_layer  import Fusion  as FusionLayer
 # 3. ...
 
 
-from model_config import D_TABULAR, D_EMBEDDING, D_FUSION
+from FederatedModel.model_config import D_TABULAR, D_EMBEDDING, D_FUSION
 
 
 class Head(nn.Module):

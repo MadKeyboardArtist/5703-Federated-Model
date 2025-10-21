@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from model_config import D_EMBEDDING, D_FUSION
+from FederatedModel.model_config import D_EMBEDDING, D_FUSION
 
 # 128 + 128 -> 128
 class Fusion(nn.Module):
