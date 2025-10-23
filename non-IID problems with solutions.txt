@@ -23,6 +23,13 @@ SL: - 1. the 8 mask features
 PB: Sites have different numbers of samples, leads to imblance site importance
 EG: One hospital has 5,000 rows, another 500.
 SL: - solved by aggregation
+
+# z-scalling privacy issue:
+- Z-scaling itself doesn’t leak privacy,
+- but you must make sure the global mean and variance are calculated in a federated-safe way —
+  sites share only simple sums or encrypted values, not their raw data.
+
+- With this setup, everyone uses consistent normalization, and no one exposes private patient info.
 =========================================================================================================
 
 2. IMAGE
