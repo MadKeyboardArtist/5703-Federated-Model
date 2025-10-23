@@ -1,0 +1,59 @@
+1. TEXT (TABULAR)
+1. Feature-space heterogeneity 
+PB: Sites have different feature sets
+EG: One hospital records “Blood Pressure” and “Heart Rate,” another records “Glucose” and “BMI.”
+SL: - fixed 8 features + 8 corresponding mask features (for existing or not)
+    - for existing features: z-scalling with global mean & var, then mask as 1
+    - for missing features: fill with 0, then mask as 0
+
+2. Label-space heterogeneity
+PB: Sites have different label sets or class coverage
+EG: One site has labels {0,1}, another has {2,3}. 
+SL: - local head design.
+
+3. Statistical heterogeneity (non-IID)
+PB: Sites share the same feature schema but data follow different distributions	
+EG: All hospitals record the same 20 columns, but one site’s patients are mostly older and diabetic, while another’s are younger and healthy.
+    Different sites decleares different importance of the 8 features.
+SL: - 1. the 8 mask features
+    - They tell the encoder which parts of the input it can trust and which parts are just placeholders.
+    - 2. global aggregation
+
+4. Quantity heterogeneity
+PB: Sites have different numbers of samples, leads to imblance site importance
+EG: One hospital has 5,000 rows, another 500.
+SL: - solved by aggregation
+=========================================================================================================
+
+2. IMAGE
+SL: only "fill with bladk" resize approach
+
+0. object / organ itself: no non-IID problem.
+
+1. Device / camera difference	Different hospitals use different fundus cameras, lenses, or lighting setups.	Site A’s images are bright and sharp, Site B’s are darker or have a red tone.
+Resolution / preprocessing difference	Some datasets are cropped, some resized, some blurred.	One site keeps the whole eye, another zooms into the macula region.
+Population difference	Patients’ skin tones, age ranges, or disease stages differ.	Site A: mostly older diabetics; Site B: younger patients with early symptoms.
+Label distribution difference	Each site may have more or fewer “disease-positive” cases.	One site has 80 % normal, another has 60 % severe DR.
+Noise & annotation quality	Labeling standards or doctors differ.	A mild case may be labeled “moderate” in one site but “mild” in another.
+
+
+these influences are potential risks, not guaranteed problems.
+Things like:
+stretching the retina shape,
+color tone differences,
+lighting variation,
+sample imbalance,
+are not automatic errors — they’re just sources of uncertainty that might cause trouble depending on the task and the data sensitivity.
+If your model’s job is simple — for example:
+“Classify healthy vs. diseased retina,”
+
+then small visual differences (a bit more round or oval) usually don’t matter much,
+because CNNs are robust and can still find disease spots or blood vessel patterns correctly.
+
+But if your task is more sensitive — say:
+“Measure vessel diameter” or “locate optic disc shape,”
+then distortion starts to matter, because those pixel-level shapes carry meaning.
+
+
+
+
