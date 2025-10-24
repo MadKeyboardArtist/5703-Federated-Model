@@ -1,0 +1,28 @@
+1. different usage of macro avg in training and evaluation
+-- Why it becomes meaningless in final evaluation?
+Now, in the final evaluation, the situation changes completely:
+Each site’s head maps embeddings to a unique label space (e.g., binary, 3-class, 5-class, etc.).
+Each test set measures performance under different criteria and difficulty.
+There’s no shared output distribution anymore.
+
+Therefore:
+Averaging “accuracy” across sites of different label spaces no longer has a consistent interpretation.
+
+For example:
+Site A: binary classification (chance = 50%)
+Site B: 5-class classification (chance = 20%)
+Both report “80% accuracy” → but they’re not comparable in difficulty or meaning.
+
+So macro averaging across heterogeneous label spaces at final evaluation mixes incomparable metrics and loses meaning.
+At this stage, you only care about site-level performance (each head with the global encoder on its own test set).
+
+-- Was using macro avg during training a mistake?
+No — it wasn’t a mistake.
+It was a FUNCTIONAL HEURISTIC, not a statistical evaluation.
+It answered the training question:
+“Is the shared encoder improving representation quality across all sites of this modality?”
+But if you used macro avg across mixed label spaces (e.g., mixing binary and multiclass sites), then yes, that would have been theoretically inconsistent — though practically harmless if it still guided training convergence.
+
+-- conclusion:
+In training: macro avg was a learning signal
+In evaluation: you need per-site metrics; no averaging across label-space boundaries
