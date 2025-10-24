@@ -59,6 +59,3 @@ This is talking about free-form data: like natual language text or images with n
 where style, vocabulary, or lighting can differ from site to site.
 Not for tabular dataset.
 Not for images with same content (retina).
-
-=========================================================
-unfinished task (2025-10-25): image_site_evaluation.py 

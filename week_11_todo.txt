@@ -1,3 +1,14 @@
 1. tabular preprocessing: 1. 相关性 2. 8 mask features
 
 2. image preprocessing: 1. image size 2. 手动确认：color(RGB/gray要统一) + 明暗（确保不要相反）
+
+=========================================================
+unfinished task (2025-10-25): 
+- image_site_evaluation.py 
+- CNN integration
+- image preprocessing template
+- site-group evaluation viaualizations
+- site training convergency track (viaualization)
+
+- image_2 download
+- possibly tabular_3
