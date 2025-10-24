@@ -26,3 +26,36 @@ But if you used macro avg across mixed label spaces (e.g., mixing binary and mul
 -- conclusion:
 In training: macro avg was a learning signal
 In evaluation: you need per-site metrics; no averaging across label-space boundaries
+
+=========================================================================================
+1. In your actual federated multi-head system, there is no single global test set or unified output layer:
+Each site has its own head (and label space).
+You cannot combine predictions from all sites directly because they’re not on the same output distribution.
+So “global performance across the entire test set” is mathematically meaningless unless:
+all sites share the same label space and modality (e.g., all binary diabetes tasks), or
+you compute normalized metrics (skill scores) before averaging.
+
+“For each modality–label-space group, 
+the global encoder’s classification capability is evaluated 
+using AUROC, AUPRC, Accuracy, and F1, 
+averaged across sites within that homogeneous group.”
+
+TODO: 
+for each site:
+- Threshold-free: AUROC, AUPRC
+- Threshold-based: Accuracy, F1.
+
+2. "site group" level macro + micro + std + range
+on AUROC + AUPRC + Accuracy + F1.
+- site-group: BOTH same modality & same label space
+
+3. Bootstrap: NOT suitable
+It is for sampling noise on each site,
+Not robustness for changing to another hospital
+Correct solution: Test the model on (thousands of, if possible) BRAND NEW datasets
+
+4. robustness: NOT suitable
+This is talking about free-form data: like natual language text or images with no theme
+where style, vocabulary, or lighting can differ from site to site.
+Not for tabular dataset.
+Not for images with same content (retina).

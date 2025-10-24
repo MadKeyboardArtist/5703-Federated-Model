@@ -1,3 +1,6 @@
+Non-IID: “Different places have data that don’t look or behave the same.”
+
+========================================================================================================
 1. TEXT (TABULAR)
 1. Feature-space heterogeneity 
 PB: Sites have different feature sets
