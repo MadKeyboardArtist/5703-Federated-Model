@@ -15,6 +15,7 @@ from FederatedModel.model_config import D_TABULAR, D_EMBEDDING, D_FUSION
 # training configs
 from SiteTrainingFunctions.training_config import BATCH
 
+####################################################
 # 0. Configs
 LOG_EVERY = 50
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -29,6 +30,24 @@ set_seed(42)
 def accuracy_from_logits(logits, labels):
     return (logits.argmax(1) == labels).float().mean().item()
 
+def store_predictions_in_df(n_classes, true_label, pred_label, prob_label):
+
+    if n_classes == 2: # binary
+        df = pd.DataFrame({
+            "y_true": true_label,
+            "y_pred": pred_label,
+            "y_prob": prob_label
+        })
+
+    else: # multi-class tasks, store probs as list columns
+        df = pd.DataFrame({
+            "y_true": true_label,
+            "y_pred": pred_label,
+            "y_prob": list(prob_label)
+        })
+    return df
+
+######################################################
 # 1. build local model: global encoders + local heads:
 def build_local_model (global_state, n_classes, head_path):
     # 1. define the complete model structure
@@ -80,8 +99,8 @@ class TabularOnlyDataset(Dataset):
         label = torch.tensor(self.y[i], dtype = torch.long)
         return {"ehr": ehr, "label": label}
 
-# 3. operate evaluation
-def final_evaluation(
+# 3. predict labels
+def make_predictions(
     site_name,
     global_state,
     test_set_path, 
@@ -89,6 +108,7 @@ def final_evaluation(
     n_classes, 
     best_head_path
     ):
+
     # Evaluate one site using its own local head and the global encoder.
     # Returns: (mean_loss, mean_acc)
 
@@ -103,26 +123,35 @@ def final_evaluation(
     ds = TabularOnlyDataset(test_set_path, labelcol)
     loader = DataLoader(ds, batch_size = BATCH, shuffle=False)
 
-    # 5. Evaluate
-    total_loss, total_acc, total_count = 0.0, 0.0, 0
+    # 5. Predict
+    all_labels, all_preds, all_probs = [], [], []
 
     for batch in loader:
         ehr   = batch["ehr"].to(device)
         label = batch["label"].to(device)
 
         logits = model(ehr)
-        loss   = F.cross_entropy(logits, label)
-        preds  = logits.argmax(dim=1)
-        acc    = (preds == label).float().mean()
 
-        total_loss  += loss.item() * len(label)
-        total_acc   += acc.item()  * len(label)
-        total_count += len(label)
+        # probabilities
+        prob = torch.softmax(logits, dim=1)
+        preds = logits.argmax(dim=1)
 
-    mean_loss = total_loss / total_count
-    mean_acc  = total_acc / total_count
+        all_labels.append(label.cpu().numpy())
+        all_preds.append(preds.cpu().numpy())
 
-    print(f"[Site Evaluation] Test samples={total_count}  Loss={mean_loss:.4f}  Acc={mean_acc:.4f}")
-    return mean_loss, mean_acc
+        if n_classes == 2:
+            all_probs.append(prob[:, 1].cpu().numpy())  # positive class prob
+        else:
+            all_probs.append(prob.cpu().numpy())
 
+    y_true = np.concatenate(all_labels)
+    y_pred = np.concatenate(all_preds)
+    y_prob = np.concatenate(all_probs, axis=0)
+
+    # 6. store results in pd.df
+    result_df = store_predictions_in_df(n_classes, y_true, y_pred, y_prob)
+    print(f"[Site Prediction] Samples={len(result_df)}  "
+          f"Predictions collected (shape={y_prob.shape})")
+
+    return result_df
 
