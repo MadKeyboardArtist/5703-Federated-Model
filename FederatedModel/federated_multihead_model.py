@@ -6,13 +6,19 @@ import torch.nn.functional as F
 
 # Model components:
 # MLP
-# from model_components.text_encoder  import Encoder as TextEncoder
+# Basic MLP
+#from model_components.text_encoder  import Encoder as TextEncoder
+# Wayne ver
 from FederatedModel.model_components.MLP_Wayne import MLPEncoder as TextEncoder
 
 # CNN
-from FederatedModel.model_components.image_encoder import Encoder as ImageEncoder
+# Basic CNN
+#from FederatedModel.model_components.image_encoder import Encoder as ImageEncoder
+# REX's EfficientNet
+from FederatedModel.model_components.EfficientNet_REX import ImageEncoder as ImageEncoder
 
 # Fusion
+# Basic proj fusion
 from FederatedModel.model_components.fusion_layer  import Fusion  as FusionLayer
 
 

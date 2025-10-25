@@ -7,6 +7,12 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 
+'''
+self.tabular_enc = TextEncoder (d_tabular, d_embedding)
+self.image_enc   = ImageEncoder(d_embedding)
+self.fusion      = FusionLayer (d_embedding, d_fusion)
+'''
+
 class MLPEncoder(nn.Module):
     def __init__(self, input_dim, embedding_dim=16):
         

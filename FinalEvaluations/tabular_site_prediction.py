@@ -112,18 +112,15 @@ def make_predictions(
     # Evaluate one site using its own local head and the global encoder.
     # Returns: (mean_loss, mean_acc)
 
-    # 1. Prepare device
-    device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-
-    # 3. Build complete local model
+    # 1. Build complete local model
     model = build_local_model(global_state, n_classes, best_head_path).to(device)
     model.eval()
 
-    # 4. Build dataloader 
+    # 2. Build dataloader 
     ds = TabularOnlyDataset(test_set_path, labelcol)
     loader = DataLoader(ds, batch_size = BATCH, shuffle=False)
 
-    # 5. Predict
+    # 3. Predict
     all_labels, all_preds, all_probs = [], [], []
 
     for batch in loader:
@@ -148,9 +145,9 @@ def make_predictions(
     y_pred = np.concatenate(all_preds)
     y_prob = np.concatenate(all_probs, axis=0)
 
-    # 6. store results in pd.df
+    # 4. store results in pd.df
     result_df = store_predictions_in_df(n_classes, y_true, y_pred, y_prob)
-    print(f"[Site Prediction] Samples={len(result_df)}  "
+    print(f"[{site_name}] Tabular Site Prediction: Samples={len(result_df)}  "
           f"Predictions collected (shape={y_prob.shape})")
 
     return result_df

@@ -4,10 +4,10 @@
 
 =========================================================
 unfinished task (2025-10-25): 
-- image_site_evaluation.py 
-- CNN integration
-- image preprocessing template
-- site-group evaluation viaualizations
+- image_site_evaluation.py ✅
+- CNN integration ✅
+- image preprocessing template ✅
+- site-group evaluation viaualizations ✅
 - site training convergency track (viaualization)
 
 - image_2 download
