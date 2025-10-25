@@ -100,6 +100,7 @@ class TabularOnlyDataset(Dataset):
         return {"ehr": ehr, "label": label}
 
 # 3. predict labels
+@torch.no_grad()
 def make_predictions(
     site_name,
     global_state,
@@ -136,10 +137,15 @@ def make_predictions(
         all_labels.append(label.cpu().numpy())
         all_preds.append(preds.cpu().numpy())
 
-        if n_classes == 2:
+        '''if n_classes == 2:
             all_probs.append(prob[:, 1].cpu().numpy())  # positive class prob
         else:
-            all_probs.append(prob.cpu().numpy())
+            all_probs.append(prob.cpu().numpy())'''
+
+        if n_classes == 2:
+            all_probs.append(prob[:, 1].detach().cpu().numpy())  # positive class prob
+        else:
+            all_probs.append(prob.detach().cpu().numpy())
 
     y_true = np.concatenate(all_labels)
     y_pred = np.concatenate(all_preds)
