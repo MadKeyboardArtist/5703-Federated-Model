@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "label": "Diabetes_012",
+  "features": [
+    "Age",
+    "Sex",
+    "BMI",
+    "GenHlth",
+    "HighBP",
+    "DiffWalk",
+    "HighChol",
+    "HeartDiseaseorAttack"
+  ]
+}
