@@ -1,0 +1,39 @@
+
+Justin
+
+Tabular_2 Dataset Description
+==============================
+
+This dataset (tabular_2) was generated based on tabular_1 by introducing controlled distribution shifts and Gaussian noise to simulate inter-site variability in federated learning environments.
+
+1. Source:
+   - Original data: tabular_1 (diabetes_012_train/val/test.csv)
+   - Label column: "Diabetes_012"
+
+2. Modification process:
+   - Six numeric features were randomly selected from the dataset.
+   - Each selected feature underwent controlled distribution shift operations:
+       • Random scaling in the range of 0.8–1.3
+       • Mean shift drawn from a normal distribution N(0, 0.1σ)
+       • Gaussian noise N(0, 0.05σ) applied at the sample level
+   - The resulting dataset was re-split into train/validation/test sets
+     with proportions 60%, 20%, and 20%, respectively.
+
+3. Output files:
+   - diabetes_012_train_shift.csv
+   - diabetes_012_val_shift.csv
+   - diabetes_012_test_shift.csv
+
+4. Purpose and research value:
+   This dataset represents a simulated “non-IID” (non-identically distributed)
+   client scenario in federated learning. The applied distribution shifts
+   mimic real-world data heterogeneity across different medical institutions
+   or data collection environments.
+
+   The shifted dataset is valuable for:
+   - Testing model robustness under distribution drift
+   - Evaluating fairness and generalization across sites
+   - Studying the effects of feature-level heterogeneity in federated training
+
+Overall, tabular_2 serves as an essential component for analyzing
+how federated learning models adapt to site-specific data distributions.

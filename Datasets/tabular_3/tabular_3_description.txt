@@ -1,0 +1,54 @@
+
+Justin
+
+Tabular_3 Dataset Description
+==============================
+
+The tabular_3 dataset was created through a semantic alignment process based on the
+feature template derived from tabular_1. It simulates cross-site feature alignment in
+federated learning, where each site may have different feature definitions or missing attributes.
+
+1. Source and foundation:
+   - Base dataset: tabular_1 (used to generate a unified 8-feature template)
+   - Target dataset: diabetes_3.csv (external site data)
+   - Label column: "label" (binary classification for diabetes prediction)
+
+2. Template creation:
+   A standardized feature template with 8 features was first derived from tabular_1
+   based on statistical relationships and logical importance.
+   The selected features include:
+   ['Age', 'Sex', 'BMI', 'GenHlth', 'HighBP', 'DiffWalk', 'HighChol', 'HeartDiseaseorAttack']
+
+3. Semantic alignment:
+   The diabetes_3 dataset was aligned to this template through semantic mapping:
+   - Features with similar meanings were mapped to template columns, e.g.:
+       • 'BloodPressure' → 'HighBP'
+       • 'GeneralHealth' → 'GenHlth'
+       • 'HeartAttack' or 'CHD' → 'HeartDiseaseorAttack'
+   - All features were renamed and reordered to follow the same structure as the template.
+
+4. Feature masking:
+   For features that did not exist in the original dataset, missing values were filled with 0,
+   and a binary mask file was generated to record data provenance:
+   - Mask value = 1 → the feature exists in the original dataset (real value)
+   - Mask value = 0 → the feature does not exist (filled or imputed with 0)
+
+5. Output files:
+   - tabular3_aligned_with_mask.csv
+   - diabetes_3_train.csv
+   - diabetes_3_val.csv
+   - diabetes_3_test.csv
+
+6. Research value:
+   The tabular_3 dataset represents a controlled simulation of feature heterogeneity
+   in federated learning systems. It allows systematic study of how models behave
+   when different sites have partially overlapping feature spaces.
+
+   The inclusion of semantic mapping and masking mechanisms provides a foundation
+   for evaluating:
+   - Feature alignment accuracy
+   - Model robustness under heterogeneous feature conditions
+   - The impact of missing features on global model performance
+
+In summary, tabular_3 bridges real-world heterogeneity and standardized learning,
+serving as a key dataset for cross-site feature alignment experiments in federated learning.
