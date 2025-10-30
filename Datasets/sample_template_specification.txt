@@ -3,25 +3,89 @@
 - gained by studying on the cleaned dataset in site "tabular_1": diabetes_012_ready_to_model.csv
 - together with 8 mask, for telling the model (MLP) whether this feature is real or missing.
 
-age: the age of patient
-- int, (from 0 to 100)
+### Feature Fields
+1. **Age**
+   - Description: The age of the patient
+   - Type: int (range: 0–100)
+   - Example: 45
 
-age_mask: mask of age
-- int, 0 or 1. 0 for missing, 1 for existing
+2. **Sex**
+   - Description: Gender of the patient
+   - Type: int (0 = female, 1 = male)
+   - Example: 0
 
-BMI: ...
-- float
+3. **BMI**
+   - Description: Body Mass Index
+   - Type: float
+   - Example: 28.4
 
-BMI_mask: mask of BMI
-- int, 0 or 1. 0 for missing, 1 for existing
+4. **GenHlth**
+   - Description: Self-reported general health status
+   - Type: int (1–5; 1 = excellent, 5 = poor)
+   - Example: 3
 
-sex: the gender of patient
-- int, 0 or 1, 0 for male, 1 for female
+5. **HighBP**
+   - Description: Whether the patient has been diagnosed with high blood pressure
+   - Type: int (0 = no, 1 = yes)
+   - Example: 1
 
-sex_mask: mask of sex
-- int, 0 or 1. 0 for missing, 1 for existing
+6. **DiffWalk**
+   - Description: Whether the patient has difficulty walking or climbing stairs
+   - Type: int (0 = no, 1 = yes)
+   - Example: 0
 
-...
+7. **HighChol**
+   - Description: Whether the patient has been diagnosed with high cholesterol
+   - Type: int (0 = no, 1 = yes)
+   - Example: 1
+
+8. **HeartDiseaseorAttack**
+   - Description: Whether the patient has ever had a heart disease or heart attack
+   - Type: int (0 = no, 1 = yes)
+   - Example: 0
+
+---
+
+### Mask Fields
+9. **Age_mask**  
+   - Description: Mask of age  
+   - Type: int (0 = missing, 1 = existing)  
+   - Example: 1  
+
+10. **Sex_mask**  
+    - Description: Mask of sex  
+    - Type: int (0 = missing, 1 = existing)  
+    - Example: 1  
+
+11. **BMI_mask**  
+    - Description: Mask of BMI  
+    - Type: int (0 = missing, 1 = existing)  
+    - Example: 1  
+
+12. **GenHlth_mask**  
+    - Description: Mask of general health  
+    - Type: int (0 = missing, 1 = existing)  
+    - Example: 1  
+
+13. **HighBP_mask**  
+    - Description: Mask of high blood pressure  
+    - Type: int (0 = missing, 1 = existing)  
+    - Example: 1  
+
+14. **DiffWalk_mask**  
+    - Description: Mask of walking difficulty  
+    - Type: int (0 = missing, 1 = existing)  
+    - Example: 1  
+
+15. **HighChol_mask**  
+    - Description: Mask of high cholesterol  
+    - Type: int (0 = missing, 1 = existing)  
+    - Example: 1  
+
+16. **HeartDiseaseorAttack_mask**  
+    - Description: Mask of heart disease or heart attack  
+    - Type: int (0 = missing, 1 = existing)  
+    - Example: 1
 
 
 2. image_sample_tamplete:
