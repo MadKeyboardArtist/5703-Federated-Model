@@ -7,9 +7,9 @@ import torch.nn.functional as F
 # Model components:
 # MLP
 # Basic MLP
-#from model_components.text_encoder  import Encoder as TextEncoder
+from FederatedModel.model_components.text_encoder  import Encoder as TextEncoder
 # Wayne ver
-from FederatedModel.model_components.MLP_Wayne import MLPEncoder as TextEncoder
+# from FederatedModel.model_components.MLP_Wayne import MLPEncoder as TextEncoder
 
 # CNN
 # Basic CNN

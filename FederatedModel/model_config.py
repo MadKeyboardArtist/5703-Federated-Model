@@ -1,5 +1,5 @@
 # overall model shape settings
-D_TABULAR = 21 # should be 16
+D_TABULAR = 16 # should be 16
 # the total number of features in the input data 
 # manually set, based on the preprocessing outcome tamplate, for 8 features + 8 masks
 
