@@ -1,0 +1,9 @@
+{
+    "name": "tabular_1",
+    "modality": "tabular",
+    "label_col": "Diabetes_012",
+    "n_classes": 2,
+    "clean_dataset_train": "Datasets/tabular_1/diabetes_012_train.csv",
+    "clean_dataset_val": "Datasets/tabular_1/diabetes_012_val.csv",
+    "clean_dataset_test": "Datasets/tabular_1/diabetes_012_test.csv"
+}
