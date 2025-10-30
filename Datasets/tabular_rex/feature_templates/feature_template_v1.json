@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "label": "label",
+  "features": [
+    "Age",
+    "Sex",
+    "BMI",
+    "GenHlth",
+    "HighBP",
+    "DiffWalk",
+    "HighChol",
+    "HeartDiseaseorAttack"
+  ]
+}
