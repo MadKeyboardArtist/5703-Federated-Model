@@ -174,6 +174,7 @@ def training(site_name,
              current_best_head_path):
     # 0.
     print("{:s}: tabular site training START".format(site_name))
+    perf_track = [] # record the acc of all epochs in this round
 
     # 1. Build model
     client_model = build_local_model(global_state, n_classes, newest_head_path)
@@ -213,6 +214,7 @@ def training(site_name,
         print(f" -> train loss={tr_l:.4f} acc={tr_a:.4f}")
         print(f" ->   val loss={va_l:.4f} acc={va_a:.4f}")
         '''
+        perf_track.append(va_a)
         sample_count += tr_sp
 
         float_va_a = float(va_a)
@@ -252,10 +254,16 @@ def training(site_name,
     # 6. record the newest local heads for the next federated training round
     torch.save(model.head.state_dict(), newest_head_path) # the final local state
 
-    # 7. Return the encoder state, sample count, and best ckpt
-    return updated_tabular, sample_count, ckpt_eva_results
+    # 7. 4 return values:
+    # - updated_tabular: 1 trained tabular encoder
+    # - sample_count: trained sample count in this site
+    # - ckpt_eva_results: 1 dict, of best performence over epochs
+    # - performance_track: list of acc after each epoch
+
+    return updated_tabular, sample_count, ckpt_eva_results, perf_track
 
 
+'''
 def training_fed_prox(
         site_name,
         global_state,           
@@ -272,6 +280,7 @@ def training_fed_prox(
     
     # 0.
     print(f"{site_name}: tabular site training START (FedProx μ={mu})")
+    perf_track = [] # record the acc of all epochs in this round
 
     # 1. Build model
     client_model = build_local_model(global_state, n_classes, newest_head_path)
@@ -334,6 +343,7 @@ def training_fed_prox(
         # Validation
         va_l, va_a, va_sp = evaluation_in_training(model, val_loader)
         sample_count += total_samples
+        perf_track.append(va_a)
 
         if float(va_a) > best:
             best = float(va_a)
@@ -348,4 +358,11 @@ def training_fed_prox(
     updated_state = model.enc.state_dict()
     torch.save(model.head.state_dict(), newest_head_path)
 
-    return updated_state, sample_count, ckpt_eva_results
+    # 4 return values:
+    # - updated_state: 1 trained encoder state_dict, refer to the site modality
+    # - sample_count: trained sample count in this site
+    # - ckpt_eva_results: 1 dict, of best performence over epochs
+    # - performance_track: list of acc after each epoch
+
+    return updated_state, sample_count, ckpt_eva_results, perf_track
+'''

@@ -165,6 +165,7 @@ def training(site_name,
              ):
     # 0.
     print("{:s}: image site training START".format(site_name))
+    perf_track = []
 
     # 1. Build model
     client_model = build_local_model(global_state, n_classes, newest_head_path)    
@@ -198,6 +199,7 @@ def training(site_name,
         # t_loss, t_acc, total = train_one_epoch(model, train_loader, optimizer, device, log_every=50)
         total = train_one_epoch_simple(model, train_loader, optimizer)
         v_loss, v_acc, v_sp = evaluation_in_training(model, val_loader, device)
+        perf_track.append(v_acc)
 
         '''
         print(f"train: loss={t_loss:.4f}, acc={t_acc:.4f} | "
@@ -248,5 +250,9 @@ def training(site_name,
     # record the newest head for the next federated training round
     torch.save(model.head.state_dict(), newest_head_path)
 
-    # Return the filtered encoder state and the sample count
-    return updated_image, sp_count, ckpt_eva_results
+    # 4 return values:
+    # - updated_image: 1 trained image encoder
+    # - sample_count: trained sample count in this site
+    # - ckpt_eva_results: 1 dict, of best performence over epochs
+    # - performance_track: list of acc after each epoch
+    return updated_image, sp_count, ckpt_eva_results, perf_track
