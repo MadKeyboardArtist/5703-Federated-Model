@@ -6,6 +6,7 @@ import os
 import random
 import numpy as np
 import pandas as pd
+import json
 from torch.utils.data import Dataset, DataLoader
 
 # model configs
@@ -17,6 +18,7 @@ from SiteTrainingFunctions.training_config import VAL_RATIO, EPOCHS, BATCH, LR, 
 
 # 0. Configs
 LOG_EVERY = 50
+TABULAR_STATS_PATH = "../global_tabular_stats.json"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # 0. helpers
@@ -28,6 +30,54 @@ set_seed(42)
 
 def accuracy_from_logits(logits, labels):
     return (logits.argmax(1) == labels).float().mean().item()
+
+# z-score normalizaion with mask judgement
+def apply_masked_znorm(df, stats_path, core_feats=None):
+    """
+    Apply z-score normalization to a dataframe using global mean/std
+    with mask columns controlling which features are real or missing.
+    
+    Args:
+        df (pd.DataFrame): input dataframe containing core features + mask features.
+        stats_path (str): path to global stats JSON.
+        core_feats (list[str]): list of base feature names (without "_mask").
+    Returns:
+        pd.DataFrame: normalized dataframe (same shape as input).
+    """
+
+    if core_feats is None:
+        core_feats = ["Age", "Sex", "BMI", "GenHlth",
+                      "HighBP", "DiffWalk", "HighChol", "HeartDiseaseorAttack"]
+
+    # Load global stats
+    with open(stats_path, "r", encoding="utf-8") as f:
+        stats = json.load(f)
+    mu_global = stats["global_feature_mean"]
+    std_global = stats["global_feature_std"]
+
+    # Apply z-score normalization with mask control
+    for f in core_feats:
+        mu = mu_global.get(f, 0.0)
+        sigma = std_global.get(f, 1.0)
+        mask_col = f + "_mask"
+
+        # Ensure both exist
+        if f not in df.columns:
+            df[f] = np.nan
+        if mask_col not in df.columns:
+            df[mask_col] = 0
+
+        # Normalize only where mask == 1
+        if sigma > 0:
+            real_mask = df[mask_col] == 1
+            df.loc[real_mask, f] = (df.loc[real_mask, f] - mu) / sigma
+
+        # Fill 0 for missing (mask == 0)
+        df.loc[df[mask_col] == 0, f] = 0.0
+        df[f] = df[f].fillna(0.0)
+
+    return df
+
 
 # 1. build local model: global encoders + local heads:
 def build_local_model (global_state, n_classes, head_path):
@@ -78,6 +128,35 @@ class TabularOnlyDataset(Dataset):
         ehr   = torch.from_numpy(self.X[i])
         label = torch.tensor(self.y[i], dtype = torch.long)
         return {"ehr": ehr, "label": label}
+
+##################
+# apply z-score normalization ver
+class TabularOnlyDataset(Dataset):
+    def __init__(self, csv_path, label_col, stats_path = TABULAR_STATS_PATH):
+        df = pd.read_csv(csv_path)
+        assert label_col in df.columns
+        self.label_col = label_col
+
+        # Apply masked z-score normalization
+        df = apply_masked_znorm(df, stats_path)
+
+        # Select numeric columns and prepare tensors
+        drop_cols = {label_col}
+        feat_cols = [c for c in df.columns if (c not in drop_cols) and pd.api.types.is_numeric_dtype(df[c])]
+        self.feat_cols = feat_cols
+
+        self.X = df[feat_cols].astype(np.float32).values
+        self.y = df[label_col].astype(int).values.astype(np.int64)
+
+    def __len__(self):
+        return len(self.y)
+
+    def __getitem__(self, i):
+        ehr   = torch.from_numpy(self.X[i])
+        label = torch.tensor(self.y[i], dtype=torch.long)
+        return {"ehr": ehr, "label": label}
+###################
+
 
 # 3. evaluation function (on validation)
 def evaluation_in_training (model, val_loader):
