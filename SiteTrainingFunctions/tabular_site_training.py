@@ -18,7 +18,7 @@ from SiteTrainingFunctions.training_config import VAL_RATIO, EPOCHS, BATCH, LR, 
 
 # 0. Configs
 LOG_EVERY = 50
-TABULAR_STATS_PATH = "../global_tabular_stats.json"
+TABULAR_STATS_PATH = "global_tabular_stats.json"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # 0. helpers
