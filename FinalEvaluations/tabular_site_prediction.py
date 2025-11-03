@@ -47,6 +47,7 @@ def store_predictions_in_df(n_classes, true_label, pred_label, prob_label):
         })
     return df
 
+
 ######################################################
 # 1. build local model: global encoders + local heads:
 def build_local_model (global_state, n_classes, head_path):
@@ -78,26 +79,7 @@ def build_local_model (global_state, n_classes, head_path):
 
 
 # 2. build Dataset for dataloader
-class TabularOnlyDataset(Dataset):
-    # Only table features + labels are read
-    def __init__(self, csv_path, label_col):
-        df = pd.read_csv(csv_path)
-        assert label_col in df.columns
-        self.label_col = label_col
-
-        drop_cols = {label_col}
-        feat_cols = [c for c in df.columns if (c not in drop_cols) and pd.api.types.is_numeric_dtype(df[c])]
-        
-        self.X = df[feat_cols].astype(np.float32).values
-        self.y = df[label_col].astype(int).values.astype(np.int64)
-
-    def __len__(self): 
-        return len(self.y)
-
-    def __getitem__(self, i):
-        ehr   = torch.from_numpy(self.X[i])
-        label = torch.tensor(self.y[i], dtype = torch.long)
-        return {"ehr": ehr, "label": label}
+from SiteTrainingFunctions.tabular_site_training import TabularOnlyDataset
 
 # 3. predict labels
 @torch.no_grad()
