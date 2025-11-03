@@ -1,0 +1,24 @@
+{
+  "site_name": "tabular_3",
+  "n_samples": 768,
+  "feature_means": {
+    "Age": 33.240885416666664,
+    "Sex": 0.0,
+    "BMI": 31.992578124999998,
+    "GenHlth": 2.5494791666666665,
+    "HighBP": 0.078125,
+    "DiffWalk": 0.0,
+    "HighChol": 0.0,
+    "HeartDiseaseorAttack": 0.0
+  },
+  "feature_vars": {
+    "Age": 138.12296379937067,
+    "Sex": 0.0,
+    "BMI": 62.079046478271486,
+    "GenHlth": 0.9402601453993057,
+    "HighBP": 0.072021484375,
+    "DiffWalk": 0.0,
+    "HighChol": 0.0,
+    "HeartDiseaseorAttack": 0.0
+  }
+}
