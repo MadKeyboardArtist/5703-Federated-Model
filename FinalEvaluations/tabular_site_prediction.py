@@ -81,6 +81,30 @@ def build_local_model (global_state, n_classes, head_path):
 # 2. build Dataset for dataloader
 from SiteTrainingFunctions.tabular_site_training import TabularOnlyDataset
 
+########
+'''
+class TabularOnlyDataset(Dataset):
+    # Only table features + labels are read
+    def __init__(self, csv_path, label_col):
+        df = pd.read_csv(csv_path)
+        assert label_col in df.columns
+        self.label_col = label_col
+
+        drop_cols = {label_col}
+        feat_cols = [c for c in df.columns if (c not in drop_cols) and pd.api.types.is_numeric_dtype(df[c])]
+        
+        self.X = df[feat_cols].astype(np.float32).values
+        self.y = df[label_col].astype(int).values.astype(np.int64)
+
+    def __len__(self): return len(self.y)
+
+    def __getitem__(self, i):
+        ehr   = torch.from_numpy(self.X[i])
+        label = torch.tensor(self.y[i], dtype = torch.long)
+        return {"ehr": ehr, "label": label}
+'''
+########
+
 # 3. predict labels
 @torch.no_grad()
 def make_predictions(

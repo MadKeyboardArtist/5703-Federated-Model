@@ -109,6 +109,7 @@ def build_local_model (global_state, n_classes, head_path):
 
 
 # 2. build Dataset for dataloader
+'''
 class TabularOnlyDataset(Dataset):
     # Only table features + labels are read
     def __init__(self, csv_path, label_col):
@@ -128,6 +129,7 @@ class TabularOnlyDataset(Dataset):
         ehr   = torch.from_numpy(self.X[i])
         label = torch.tensor(self.y[i], dtype = torch.long)
         return {"ehr": ehr, "label": label}
+ '''
 
 ##################
 # apply z-score normalization ver
