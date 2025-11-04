@@ -33,5 +33,31 @@
         "clean_dataset_train": "Datasets/tabular_4/tabular_4_train.csv",
         "clean_dataset_val": "Datasets/tabular_4/tabular_4_val.csv",
         "clean_dataset_test": "Datasets/tabular_4/tabular_4_test.csv"
+    },
+    {
+        "name": "tabular_rex",
+        "modality": "tabular",
+        "label_col": "label",
+        "n_classes": 3,
+        "clean_dataset_train": "Datasets/tabular_rex/tabular_rex_train.csv",
+        "clean_dataset_val": "Datasets/tabular_rex/tabular_rex_val.csv",
+        "clean_dataset_test": "Datasets/tabular_rex/tabular_rex_test.csv"
+    },
+    {
+        "name": "tabular_wayne",
+        "modality": "tabular",
+        "label_col": "diabetes",
+        "n_classes": 2,
+        "clean_dataset_train": "Datasets/tabular_wayne/tabular_wayne_train.csv",
+        "clean_dataset_val": "Datasets/tabular_wayne/tabular_wayne_val.csv",
+        "clean_dataset_test": "Datasets/tabular_wayne/tabular_wayne_test.csv"
+    },
+    {
+        "name": "image_2",
+        "modality": "image",
+        "n_classes": 5,
+        "clean_dataset_train": "Datasets/image_2/train",
+        "clean_dataset_val": "Datasets/image_2/val",
+        "clean_dataset_test": "Datasets/image_2/test"
     }
 ]
