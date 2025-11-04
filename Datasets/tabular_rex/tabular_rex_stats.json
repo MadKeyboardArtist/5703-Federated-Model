@@ -1,0 +1,28 @@
+{
+  "site_name": "tabular_rex",
+  "n_samples": 253680,
+  "feature_means": {
+    "Age": 8.033147089112381,
+    "Sex": 0.44087241939936805,
+    "BMI": 28.38747864932335,
+    "GenHlth": 2.51104407135362,
+    "HighBP": 0.4293051240364769,
+    "DiffWalk": 0.168362793139657,
+    "HighChol": 0.4239373062198229,
+    "HeartDiseaseorAttack": 0.094501116413467
+  },
+  "feature_vars": {
+    "Age": 9.326239731010556,
+    "Sex": 0.24650392921231565,
+    "BMI": 43.75372312643286,
+    "GenHlth": 1.1405390987922384,
+    "HighBP": 0.24500223451250205,
+    "DiffWalk": 0.14001676302587007,
+    "HighChol": 0.24421446661490298,
+    "HeartDiseaseorAttack": 0.08557065541007537
+  },
+  "zscore_note": "Use z = (x - mean) / std ; std = sqrt(var) with ddof=0. Constant columns have var=0.",
+  "missing_features": [],
+  "all_nan_features": [],
+  "constant_features": []
+}
