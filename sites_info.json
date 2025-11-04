@@ -44,15 +44,6 @@
         "clean_dataset_test": "Datasets/tabular_rex/tabular_rex_test.csv"
     },
     {
-        "name": "tabular_wayne",
-        "modality": "tabular",
-        "label_col": "diabetes",
-        "n_classes": 2,
-        "clean_dataset_train": "Datasets/tabular_wayne/tabular_wayne_train.csv",
-        "clean_dataset_val": "Datasets/tabular_wayne/tabular_wayne_val.csv",
-        "clean_dataset_test": "Datasets/tabular_wayne/tabular_wayne_test.csv"
-    },
-    {
         "name": "image_2",
         "modality": "image",
         "n_classes": 5,
