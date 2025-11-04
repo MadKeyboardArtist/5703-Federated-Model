@@ -1,4 +1,5 @@
 git status
 git add .
 git commit -m "(omit)"
-git push origin main
+git push origin maingit add -A
+git commit -m "remove .gitignore"
