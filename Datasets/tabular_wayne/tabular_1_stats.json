@@ -1,0 +1,26 @@
+{
+  "site_name": "tabular_wayne",
+  "n_samples": 9884,
+  "feature_means": {
+    "patient_id": 5998.721165520033,
+    "Age": 54.31090651558074,
+    "Sex": 0.4829016592472683,
+    "BMI": 27.01073452043707,
+    "HighBP": 0.3048360987454472,
+    "GenHlth": 0.0,
+    "DiffWalk": 0.0,
+    "HighChol": 0.0,
+    "HeartDiseaseorAttack": 0.0
+  },
+  "feature_vars": {
+    "patient_id": 8340532.143821547,
+    "Age": 311.7482379884278,
+    "Sex": 0.24970764674350343,
+    "BMI": 33.91426457581765,
+    "HighBP": 0.21191105164710314,
+    "GenHlth": 0.0,
+    "DiffWalk": 0.0,
+    "HighChol": 0.0,
+    "HeartDiseaseorAttack": 0.0
+  }
+}
