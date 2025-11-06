@@ -44,11 +44,11 @@
         "clean_dataset_test": "Datasets/tabular_rex/tabular_rex_test.csv"
     },
     {
-        "name": "image_2",
+        "name": "image_3",
         "modality": "image",
         "n_classes": 5,
-        "clean_dataset_train": "Datasets/image_2/train",
-        "clean_dataset_val": "Datasets/image_2/val",
-        "clean_dataset_test": "Datasets/image_2/test"
+        "clean_dataset_train": "Datasets/image_3/train",
+        "clean_dataset_val": "Datasets/image_3/val",
+        "clean_dataset_test": "Datasets/image_3/test"
     }
 ]

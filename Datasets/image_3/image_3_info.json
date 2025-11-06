@@ -1,0 +1,8 @@
+{
+    "name": "image_3",
+    "modality": "image",
+    "n_classes": 5,
+    "clean_dataset_train": "Datasets/image_3/train",
+    "clean_dataset_val": "Datasets/image_3/val",
+    "clean_dataset_test": "Datasets/image_3/test"
+}
