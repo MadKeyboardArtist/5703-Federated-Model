@@ -17,7 +17,7 @@ from FederatedModel.federated_multihead_model import SharedEncoders, ImageClient
 from FederatedModel.model_config import D_TABULAR, D_EMBEDDING, D_FUSION 
 
 # training configs
-from SiteTrainingFunctions.training_config import VAL_RATIO, EPOCHS, BATCH, LR, WD 
+from SiteTrainingFunctions.training_config import VAL_RATIO_IMAGE, EPOCHS_IMAGE, BATCH_IMAGE, LR_IMAGE, WD_IMAGE 
 
 
 # 0. Configs
@@ -91,7 +91,7 @@ def make_predictions(
 
     # 2. Build test DataLoader
     test_dataset = ImageFolderDict(test_set_path, transform = tsfm)
-    test_loader  = DataLoader(test_dataset, batch_size = BATCH, shuffle = False)
+    test_loader  = DataLoader(test_dataset, batch_size = BATCH_IMAGE, shuffle = False)
 
     # 3. Predict
     all_labels, all_preds, all_probs = [], [], []

@@ -17,7 +17,7 @@ from FederatedModel.federated_multihead_model import SharedEncoders, ImageClient
 from FederatedModel.model_config import D_TABULAR, D_EMBEDDING, D_FUSION 
 
 # training configs
-from SiteTrainingFunctions.training_config import VAL_RATIO, EPOCHS, BATCH, LR, WD 
+from SiteTrainingFunctions.training_config import VAL_RATIO_IMAGE, EPOCHS_IMAGE, BATCH_IMAGE, LR_IMAGE, WD_IMAGE 
 
 
 # 0. Configs
@@ -57,7 +57,7 @@ class ImageFolderDict(datasets.ImageFolder):
         img, label = super().__getitem__(index)
         return {"img": img, "label": torch.tensor(label, dtype=torch.long)}
 
-def build_loaders(train_set_path, val_set_path, tfms, batch_size = BATCH, workers=4):
+def build_loaders(train_set_path, val_set_path, tfms, batch_size = BATCH_IMAGE, workers=4):
     train_ds = ImageFolderDict(train_set_path, transform = tfms)
     val_ds   = ImageFolderDict(val_set_path,   transform = tfms)
     
@@ -177,9 +177,9 @@ def training(site_name,
         for param in model.enc.parameters():
             param.requires_grad = False
         # 2.2. Set optimizer to only optimize the local head
-        optimizer = torch.optim.Adam (model.head.parameters(), lr = LR, weight_decay = WD) 
+        optimizer = torch.optim.Adam (model.head.parameters(), lr = LR_IMAGE, weight_decay = WD_IMAGE) 
     else:
-        optimizer = torch.optim.Adam (model.parameters(), lr = LR, weight_decay = WD) 
+        optimizer = torch.optim.Adam (model.parameters(), lr = LR_IMAGE, weight_decay = WD_IMAGE) 
 
     # LR, WD could be different
     # design experinments if needed
@@ -188,14 +188,14 @@ def training(site_name,
     train_loader, val_loader = build_loaders(train_set_path, 
                                              val_set_path, 
                                              tsfm, 
-                                             batch_size = BATCH, 
+                                             batch_size = BATCH_IMAGE, 
                                              workers=4)
     
     # 4. train each epoch
     sp_count = 0
     min_loss = float("inf")
 
-    for epoch in range(1, EPOCHS + 1):
+    for epoch in range(1, EPOCHS_IMAGE + 1):
         # t_loss, t_acc, total = train_one_epoch(model, train_loader, optimizer, device, log_every=50)
         total = train_one_epoch_simple(model, train_loader, optimizer)
         v_loss, v_acc, v_sp = evaluation_in_training(model, val_loader, device)

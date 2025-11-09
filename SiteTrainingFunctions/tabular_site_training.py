@@ -14,7 +14,7 @@ from FederatedModel.federated_multihead_model import SharedEncoders, TabularClie
 from FederatedModel.model_config import D_TABULAR, D_EMBEDDING, D_FUSION 
 
 # training configs
-from SiteTrainingFunctions.training_config import VAL_RATIO, EPOCHS, BATCH, LR, WD 
+from SiteTrainingFunctions.training_config import VAL_RATIO_TABULAR, EPOCHS_TABULAR, BATCH_TABULAR, LR_TABULAR, WD_TABULAR 
 
 # 0. Configs
 LOG_EVERY = 50
@@ -78,6 +78,46 @@ def apply_masked_znorm(df, stats_path, core_feats=None):
 
     return df
 
+# re-order the sample features all in the same order
+# tabular sample template for feature re-order
+TABULAR_FEATURE_TEMPLATE_PATH = "Datasets/TabularTemplateBuilding/tabular_feature_template.json"
+
+with open(TABULAR_FEATURE_TEMPLATE_PATH, "r") as f:
+    templete = json.load(f)
+TABULAR_FEATURE_TEMPLATE = templete["features"]+ templete["masks"]
+
+# re-order function (skips the label)
+def reorder_features(df, feature_template=TABULAR_FEATURE_TEMPLATE, label_col = None):
+    """
+    Reorder the feature columns to match the fixed global template,
+    while keeping the label column intact.
+    
+    Args:
+        df (pd.DataFrame): DataFrame containing features + label.
+        feature_template (list[str]): Desired feature order.
+        label_col (str or None): Name of label column, if present.
+    Returns:
+        pd.DataFrame: DataFrame with reordered feature columns (label kept at end).
+    """
+    # Identify missing and extra features
+    missing = [f for f in feature_template if f not in df.columns]
+    extra   = [f for f in df.columns if (f not in feature_template) and (f != label_col)]
+
+    # Fill missing features with 0 (neutral mean)
+    if missing:
+        print(f"[Warning] Missing features filled with 0: {missing}")
+        for f in missing:
+            df[f] = 0.0
+
+    # Warn about extra non-label columns
+    if extra:
+        print(f"[Warning] Extra features ignored: {extra}")
+
+    # Reorder strictly for features, label stays at the end
+    feature_cols = [f for f in feature_template if f in df.columns]
+    ordered_cols = feature_cols + ([label_col] if label_col else [])
+    return df[ordered_cols]
+
 
 # 1. build local model: global encoders + local heads:
 def build_local_model (global_state, n_classes, head_path):
@@ -109,29 +149,6 @@ def build_local_model (global_state, n_classes, head_path):
 
 
 # 2. build Dataset for dataloader
-'''
-class TabularOnlyDataset(Dataset):
-    # Only table features + labels are read
-    def __init__(self, csv_path, label_col):
-        df = pd.read_csv(csv_path)
-        assert label_col in df.columns
-        self.label_col = label_col
-
-        drop_cols = {label_col}
-        feat_cols = [c for c in df.columns if (c not in drop_cols) and pd.api.types.is_numeric_dtype(df[c])]
-        
-        self.X = df[feat_cols].astype(np.float32).values
-        self.y = df[label_col].astype(int).values.astype(np.int64)
-
-    def __len__(self): return len(self.y)
-
-    def __getitem__(self, i):
-        ehr   = torch.from_numpy(self.X[i])
-        label = torch.tensor(self.y[i], dtype = torch.long)
-        return {"ehr": ehr, "label": label}
- '''
-
-##################
 # apply z-score normalization ver
 class TabularOnlyDataset(Dataset):
     def __init__(self, csv_path, label_col, stats_path = TABULAR_STATS_PATH):
@@ -139,6 +156,9 @@ class TabularOnlyDataset(Dataset):
         assert label_col in df.columns
         self.label_col = label_col
 
+        # Apply feature re-order
+        df = reorder_features(df, feature_template = TABULAR_FEATURE_TEMPLATE, label_col = label_col)
+        
         # Apply masked z-score normalization
         df = apply_masked_znorm(df, stats_path)
 
@@ -268,9 +288,9 @@ def training(site_name,
         for param in model.enc.parameters():
             param.requires_grad = False
         # 3. Set optimizer to only optimize the local head
-        optimizer = torch.optim.AdamW(model.head.parameters(), lr=LR, weight_decay=WD)
+        optimizer = torch.optim.AdamW(model.head.parameters(), lr=LR_TABULAR, weight_decay=WD_TABULAR)
     else:
-        optimizer = torch.optim.AdamW(model.parameters(), lr = LR, weight_decay = WD)
+        optimizer = torch.optim.AdamW(model.parameters(), lr = LR_TABULAR, weight_decay = WD_TABULAR)
 
     # 3. build dataloder and load dataset
     # Build datasets directly from the .csv
@@ -278,15 +298,15 @@ def training(site_name,
     val_ds   = TabularOnlyDataset(val_set_path,   labelcol)
 
     # wrap with DataLoader
-    train_loader = DataLoader(train_ds, batch_size=BATCH, shuffle=True)
-    val_loader   = DataLoader(val_ds,   batch_size=BATCH, shuffle=False)
+    train_loader = DataLoader(train_ds, batch_size=BATCH_TABULAR, shuffle=True)
+    val_loader   = DataLoader(val_ds,   batch_size=BATCH_TABULAR, shuffle=False)
 
     # 4. train
     best = -1.0 # best acc
     sample_count = 0
     best_head_state = None
 
-    for epoch in range(1, EPOCHS + 1):        
+    for epoch in range(1, EPOCHS_TABULAR + 1):        
         #tr_l,tr_a, tr_sp = train_one_epoch_simple(model, train_loader, optimizer)
         tr_sp = train_one_epoch_simple(model, train_loader, optimizer)
         va_l, va_a, va_sp = evaluation_in_training(model, val_loader)
@@ -342,108 +362,3 @@ def training(site_name,
     # - performance_track: list of acc after each epoch
 
     return updated_tabular, sample_count, ckpt_eva_results, perf_track
-
-
-'''
-def training_fed_prox(
-        site_name,
-        global_state,           
-        freeze_global,
-        train_set_path, 
-        val_set_path, 
-        labelcol, 
-        n_classes, 
-        newest_head_path, 
-        current_best_head_path,
-        fed_prox_agg = False,
-        mu = 0.05
-        ):
-    
-    # 0.
-    print(f"{site_name}: tabular site training START (FedProx μ={mu})")
-    perf_track = [] # record the acc of all epochs in this round
-
-    # 1. Build model
-    client_model = build_local_model(global_state, n_classes, newest_head_path)
-    model = client_model.to(device)
-
-    # 2. freeze_global or not
-    if freeze_global:
-        for p in model.enc.parameters():
-            p.requires_grad = False
-        optimizer = torch.optim.AdamW(model.head.parameters(), lr=LR, weight_decay=WD)
-    else:
-        optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=WD)
-
-    # 3. Data
-    train_ds = TabularOnlyDataset(train_set_path, labelcol)
-    val_ds   = TabularOnlyDataset(val_set_path, labelcol)
-    train_loader = DataLoader(train_ds, batch_size=BATCH, shuffle=True)
-    val_loader   = DataLoader(val_ds, batch_size=BATCH, shuffle=False)
-
-    # 4. Prepare FedProx anchor
-    prox_anchor = {k: v.detach().clone().to(device) for k, v in global_state.items()}
-
-    best = -1.0
-    sample_count = 0
-    best_head_state = None
-
-    for epoch in range(1, EPOCHS + 1):
-        model.train()
-        total_samples = 0
-
-        for batch in train_loader:
-            for k, v in batch.items():
-                if torch.is_tensor(v):
-                    batch[k] = v.to(device)
-
-            optimizer.zero_grad(set_to_none=True)
-            logits = model(batch["ehr"])
-            loss = F.cross_entropy(logits, batch["label"])
-
-            # ===== FedProx proximal term =====
-            if fed_prox_agg:
-                prox_loss = torch.zeros(1, device=device)
-                for name, param in model.named_parameters():
-                    if not param.requires_grad: 
-                        continue
-                    # optional: skip head parameters (usually "head" in name)
-                    if "head" in name.lower():
-                        continue
-                    if name in prox_anchor:
-                        diff = param - prox_anchor[name]
-                        prox_loss += (diff * diff).sum()
-                loss = loss + (mu / 2.0) * prox_loss
-            # =================================
-
-            loss.backward()
-            optimizer.step()
-
-            total_samples += batch["label"].size(0)
-
-        # Validation
-        va_l, va_a, va_sp = evaluation_in_training(model, val_loader)
-        sample_count += total_samples
-        perf_track.append(va_a)
-
-        if float(va_a) > best:
-            best = float(va_a)
-            best_head_state = model.head.state_dict()
-            torch.save(best_head_state, current_best_head_path)
-            ckpt_eva_results = {"val_loss": va_l, "val_acc": va_a, "num_samples": va_sp}
-            print(f" [best updated] acc: {best:.4f}")
-
-    print(f"{site_name}: tabular site training DONE (FedProx)")
-
-    # 5. Return updated encoder
-    updated_state = model.enc.state_dict()
-    torch.save(model.head.state_dict(), newest_head_path)
-
-    # 4 return values:
-    # - updated_state: 1 trained encoder state_dict, refer to the site modality
-    # - sample_count: trained sample count in this site
-    # - ckpt_eva_results: 1 dict, of best performence over epochs
-    # - performance_track: list of acc after each epoch
-
-    return updated_state, sample_count, ckpt_eva_results, perf_track
-'''

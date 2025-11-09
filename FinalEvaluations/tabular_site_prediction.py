@@ -13,7 +13,7 @@ from FederatedModel.federated_multihead_model import SharedEncoders, TabularClie
 from FederatedModel.model_config import D_TABULAR, D_EMBEDDING, D_FUSION 
 
 # training configs
-from SiteTrainingFunctions.training_config import BATCH
+from SiteTrainingFunctions.training_config import BATCH_TABULAR
 
 ####################################################
 # 0. Configs
@@ -125,7 +125,7 @@ def make_predictions(
 
     # 2. Build dataloader 
     ds = TabularOnlyDataset(test_set_path, labelcol)
-    loader = DataLoader(ds, batch_size = BATCH, shuffle=False)
+    loader = DataLoader(ds, batch_size = BATCH_TABULAR, shuffle=False)
 
     # 3. Predict
     all_labels, all_preds, all_probs = [], [], []
